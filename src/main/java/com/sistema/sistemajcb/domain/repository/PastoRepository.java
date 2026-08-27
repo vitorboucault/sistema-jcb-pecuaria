@@ -10,4 +10,5 @@ public interface PastoRepository {
     void salvar(Pasto pasto);
     Optional<Pasto> buscarPorId(UUID id);
     List<Pasto> buscarTodos();
+    Double buscarAreaHectares(UUID pastoId);
 }

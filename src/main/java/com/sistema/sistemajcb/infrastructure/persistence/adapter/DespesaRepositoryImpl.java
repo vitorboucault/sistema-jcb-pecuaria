@@ -7,6 +7,7 @@ import com.sistema.sistemajcb.infrastructure.persistence.mapper.DespesaMapper;
 import com.sistema.sistemajcb.infrastructure.persistence.repository.SpringDataDespesaRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -42,4 +43,10 @@ public class DespesaRepositoryImpl implements DespesaRepository {
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public BigDecimal somarDespesasNoPeriodo(LocalDate inicio, LocalDate fim) {
+        return springDataRepository.somarDespesasNoPeriodo(inicio, fim);
+    }
+
 }

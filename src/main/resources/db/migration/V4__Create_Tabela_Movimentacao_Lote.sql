@@ -1,0 +1,8 @@
+--
+-- CREATE TABLE movimentacao_lote (
+--     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+--     lote_id UUID NOT NULL REFERENCES lote(id),
+--     pasto_id UUID NOT NULL REFERENCES pasto(id),
+--     data_entrada DATE NOT NULL,
+--     data_saida DATE -- Fica nulo enquanto o lote estiver no pasto
+-- );

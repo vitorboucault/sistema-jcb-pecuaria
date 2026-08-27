@@ -44,6 +44,15 @@ public class PastoRepositoryImpl implements PastoRepository {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public Double buscarAreaHectares(UUID pastoId) {
+        return 0.0;
+    }
+
+    @Override
+    public Double somarAreaTotal() {
+        return springData.somarAreaTotalHectares();
+    }
 
 
 }
