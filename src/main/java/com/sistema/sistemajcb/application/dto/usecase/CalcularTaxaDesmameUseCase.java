@@ -1,5 +1,6 @@
 package com.sistema.sistemajcb.application.dto.usecase;
 
+import com.sistema.sistemajcb.domain.repository.DesmameRepository;
 import com.sistema.sistemajcb.domain.repository.EventoReprodutivoRepository;
 
 import java.math.BigDecimal;
