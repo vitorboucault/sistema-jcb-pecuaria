@@ -11,4 +11,5 @@ public interface PastoRepository {
     Optional<Pasto> buscarPorId(UUID id);
     List<Pasto> buscarTodos();
     Double buscarAreaHectares(UUID pastoId);
+    Double somarAreaTotal();
 }

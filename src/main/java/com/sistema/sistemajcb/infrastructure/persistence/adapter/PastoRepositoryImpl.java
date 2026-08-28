@@ -46,12 +46,15 @@ public class PastoRepositoryImpl implements PastoRepository {
 
     @Override
     public Double buscarAreaHectares(UUID pastoId) {
-        return 0.0;
+
+        return springDataRepository.findById(pastoId)
+                .map(PastoEntity::getAreaHectares)
+                .orElse(0.0);
     }
 
     @Override
     public Double somarAreaTotal() {
-        return springData.somarAreaTotalHectares();
+        return springDataRepository.somarAreaTotalHectares();
     }
 
 
