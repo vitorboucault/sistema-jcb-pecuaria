@@ -16,6 +16,6 @@ public interface SpringDataDespesaRepository extends JpaRepository<DespesaEntity
     List<DespesaEntity> findByTipoAndCentroCustoId(String tipo, UUID centroCustoId);
     List<DespesaEntity> findByTipoAndDataTransacaoBetween(String tipo, LocalDate inicio, LocalDate fim);
 
-    @Query("SELECT COALESCE(SUM(d.valor), 0.0) FROM DespesaEntity d WHERE d.dataDespesa BETWEEN :inicio AND :fim")
+    @Query("SELECT COALESCE(SUM(d.valor), 0.0) FROM DespesaEntity d WHERE d.dataTransacao BETWEEN :inicio AND :fim")
     BigDecimal somarDespesasNoPeriodo(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
 }

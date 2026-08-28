@@ -2,6 +2,7 @@ package com.sistema.sistemajcb.application.dto.usecase;
 
 import com.sistema.sistemajcb.domain.repository.DespesaRepository;
 import com.sistema.sistemajcb.domain.repository.PastoRepository;
+import com.sistema.sistemajcb.domain.repository.VendaAnimalRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

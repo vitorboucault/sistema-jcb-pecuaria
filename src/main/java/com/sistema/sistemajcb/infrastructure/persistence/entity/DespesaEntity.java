@@ -15,12 +15,16 @@ public class DespesaEntity {
 
     @Id
     private UUID id;
+
     @Column(nullable = false, length = 20)
-    private String tipo; // Vai gravar "DESPESA"
+    private String tipo;
+
     @Column(name = "data_transacao", nullable = false)
     private LocalDate dataTransacao;
+
     @Column(nullable = false)
     private BigDecimal valor;
+
     @Column(nullable = false, length = 50)
     private String categoria;
     @Column(name = "centro_custo_id")

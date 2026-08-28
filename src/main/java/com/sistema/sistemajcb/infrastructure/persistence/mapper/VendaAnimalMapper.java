@@ -3,7 +3,9 @@ package com.sistema.sistemajcb.infrastructure.persistence.mapper;
 import com.sistema.sistemajcb.domain.enums.ModalidadeVenda;
 import com.sistema.sistemajcb.domain.model.VendaAnimal;
 import com.sistema.sistemajcb.infrastructure.persistence.entity.VendaAnimalEntity;
+import org.springframework.stereotype.Component;
 
+@Component
 public class VendaAnimalMapper {
     public VendaAnimalEntity toEntity(VendaAnimal vendaAnimal) {
         return new VendaAnimalEntity(
