@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export const LoginPage = () => {
-    const [usuario, setUsuario] = useState('dono');
-    const [senha, setSenha] = useState('123456');
+    const [usuario, setUsuario] = useState('');
+    const [senha, setSenha] = useState('');
     const { login } = useAuth();
     const navigate = useNavigate();
     const [erro, setErro] = useState<string | null>(null);

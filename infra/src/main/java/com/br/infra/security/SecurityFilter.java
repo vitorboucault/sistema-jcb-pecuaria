@@ -25,7 +25,7 @@ public class SecurityFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         // Libera a rota de login para não passar pelas regras do filtro
-        return "/api/auth/login".equals(request.getRequestURI());
+        return "/api/v1/auth/login".equals(request.getRequestURI());
     }
 
     @Override
@@ -40,8 +40,7 @@ public class SecurityFilter extends OncePerRequestFilter {
 
             if (login != null && !login.isBlank()) {
                 var authorities = List.of(
-                        new SimpleGrantedAuthority("ROLE_USER"),
-                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                        new SimpleGrantedAuthority("ROLE_USER")
                 );
                 var auth = new UsernamePasswordAuthenticationToken(login, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
