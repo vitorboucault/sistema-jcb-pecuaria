@@ -1,6 +1,7 @@
 package com.br.usecase.sistema;
 
 import com.br.core.domain.model.Animal;
+import com.br.usecase.nutricao.CalcularConversaoAlimentarUseCase;
 import com.br.usecase.sistema.DashboardExecutivoDTO;
 import com.br.core.domain.repository.AnimalRepository;
 import com.br.usecase.financeiro.CalcularCustoArrobaUseCase;
@@ -27,7 +28,7 @@ public class GerarDashboardExecutivoUseCase {
     private final CalcularDesembolsoCabecaMesUseCase desembolsoUseCase;
     private final CalcularCustoArrobaUseCase custoArrobaUseCase;
     private final CalcularGmdGlobalUseCase gmdGlobalUseCase;
-//    private final CalcularConversaoAlimentarUseCase conversaoAlimentarUseCase;
+    private final  CalcularConversaoAlimentarUseCase conversaoAlimentarUseCase;
     private final CalcularTaxaPrenhezUseCase taxaPrenhezUseCase;
     private final CalcularTaxaDesmameUseCase taxaDesmameUseCase;
     private final CalcularTaxaLotacaoUseCase taxaLotacaoUseCase;
@@ -39,7 +40,7 @@ public class GerarDashboardExecutivoUseCase {
             CalcularDesembolsoCabecaMesUseCase desembolsoUseCase,
             CalcularCustoArrobaUseCase custoArrobaUseCase,
             CalcularGmdGlobalUseCase gmdGlobalUseCase,
-//            CalcularConversaoAlimentarUseCase conversaoAlimentarUseCase,
+            CalcularConversaoAlimentarUseCase conversaoAlimentarUseCase,
             CalcularTaxaPrenhezUseCase taxaPrenhezUseCase,
             CalcularTaxaDesmameUseCase taxaDesmameUseCase,
             CalcularTaxaLotacaoUseCase taxaLotacaoUseCase,
@@ -49,7 +50,7 @@ public class GerarDashboardExecutivoUseCase {
         this.desembolsoUseCase = desembolsoUseCase;
         this.custoArrobaUseCase = custoArrobaUseCase;
         this.gmdGlobalUseCase = gmdGlobalUseCase;
-        //this.conversaoAlimentarUseCase = conversaoAlimentarUseCase;
+        this.conversaoAlimentarUseCase = conversaoAlimentarUseCase;
         this.taxaPrenhezUseCase = taxaPrenhezUseCase;
         this.taxaDesmameUseCase = taxaDesmameUseCase;
         this.taxaLotacaoUseCase = taxaLotacaoUseCase;
@@ -68,14 +69,21 @@ public class GerarDashboardExecutivoUseCase {
         BigDecimal custoArroba = custoArrobaUseCase.executar(inicioSafra, fimSafra);
 
         BigDecimal gmdGlobal = gmdGlobalUseCase.executar(inicioSafra, fimSafra, rebanhoAtivoIds);
-//        BigDecimal caMedia = loteReferenciaId != null ? conversaoAlimentarUseCase.executar(inicioSafra, fimSafra, loteReferenciaId) : BigDecimal.ZERO;
+        BigDecimal caMedia = BigDecimal.ZERO;
         BigDecimal taxaPrenhez = estacaoMontaId != null ? taxaPrenhezUseCase.executar(estacaoMontaId) : BigDecimal.ZERO;
         BigDecimal taxaDesmame = estacaoMontaId != null ? taxaDesmameUseCase.executar(estacaoMontaId) : BigDecimal.ZERO;
         BigDecimal taxaLotacao = pastoReferenciaId != null ? taxaLotacaoUseCase.executar(pastoReferenciaId) : BigDecimal.ZERO;
 
         return new DashboardExecutivoDTO(
-                margemBruta, pontoEquilibrio, desembolso, custoArroba,
-                gmdGlobal, taxaPrenhez, taxaDesmame, taxaLotacao
+                margemBruta,
+                pontoEquilibrio,
+                desembolso,
+                custoArroba,
+                gmdGlobal,
+                caMedia,
+                taxaPrenhez,
+                taxaDesmame,
+                taxaLotacao
         );
     }
 }
