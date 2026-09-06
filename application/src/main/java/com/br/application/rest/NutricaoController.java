@@ -13,7 +13,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/nutricao")
+@RequestMapping("/api/v1/nutricao")
 @Tag(name = "Nutrição e Cocho", description = "Controle de arraçoamento e conversão alimentar")
 public class NutricaoController {
 

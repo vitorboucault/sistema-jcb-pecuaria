@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/pastos")
+@RequestMapping("/api/v1/pastos")
 public class PastoController {
     private final PastoRepository pastoRepository;
     private final RegistrarPastoUseCase registrarPastoUseCase;

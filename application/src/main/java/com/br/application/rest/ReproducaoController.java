@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/reproducao")
+@RequestMapping("/api/v1/reproducao")
 public class ReproducaoController {
     private final RegistrarDiagnosticoUseCase registrarDiagnosticoUseCase;
     private final CalcularTaxaPrenhezUseCase calcularTaxaPrenhezUseCase;

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/despesas")
+@RequestMapping("/api/v1/despesas")
 public class DespesaController {
     private final RegistrarDespesaUseCase registrarDespesaUseCase;
     private final DespesaRepository despesaRepository;

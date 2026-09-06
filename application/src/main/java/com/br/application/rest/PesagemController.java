@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/pesagens")
+@RequestMapping("/api/v1/pesagens")
 public class PesagemController {
     private final RegistrarPesagemUseCase registrarPesagemUseCase;
 
