@@ -1,10 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './src/features/auth/hooks/useAuth';
-import { LoginPage } from './src/features/auth/pages/LoginPage';
-import { MainLayout } from './src/shared/components/MainLayout';
-import { DashboardExecutivoPage } from './src/features/dashboard/pages/DashboardExecutivoPage';
-import type {JSX} from "react";
-import {RebanhoPage} from "./src/features/rebanho/pages/RebanhoPage.tsx";
+import type { JSX } from 'react';
+import { useAuth } from './features/auth/hooks/useAuth';
+import { LoginPage } from './features/auth/pages/LoginPage';
+import { DashboardExecutivoPage } from './features/dashboard/pages/DashboardExecutivoPage';
+import { RebanhoPage } from './features/rebanho/pages/RebanhoPage';
+import { MainLayout } from './shared/components/MainLayout';
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
     const { isAuthenticated, isLoading } = useAuth();
