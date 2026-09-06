@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public interface AnimalRepository {
 
-    void salvar(Animal animal);
+    Animal salvar(Animal animal);
     Optional<Animal> buscarPorId(UUID id);
     Optional<Animal> buscarPorBrinco(String brinco);
     List<Animal> buscarAnimaisElegiveisParaEvolucao();

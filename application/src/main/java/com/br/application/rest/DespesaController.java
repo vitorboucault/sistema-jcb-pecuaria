@@ -6,6 +6,8 @@ import com.br.core.domain.model.Despesa;
 import com.br.core.domain.model.Pagina;
 import com.br.core.domain.repository.DespesaRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -35,7 +37,7 @@ public class DespesaController {
 
     @DeleteMapping("/{id}/estornar")
     public ResponseEntity<Void> estornarDespesa(@PathVariable UUID id) {
-        // estornarDespesaUseCase.executar(id);
-        return ResponseEntity.noContent().build();
+        throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED,
+                "Estorno de despesa ainda não está disponível.");
     }
 }

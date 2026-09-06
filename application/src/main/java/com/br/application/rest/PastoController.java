@@ -2,6 +2,7 @@ package com.br.application.rest;
 
 import com.br.usecase.dto.RegistrarPastoCommand;
 import com.br.usecase.manejo.RegistrarPastoUseCase;
+import com.br.usecase.manejo.IniciarManutencaoPastoUseCase;
 import com.br.core.domain.model.Pagina;
 import com.br.core.domain.model.Pasto;
 import com.br.core.domain.repository.PastoRepository;
@@ -15,10 +16,13 @@ import java.util.UUID;
 public class PastoController {
     private final PastoRepository pastoRepository;
     private final RegistrarPastoUseCase registrarPastoUseCase;
+    private final IniciarManutencaoPastoUseCase iniciarManutencaoPastoUseCase;
 
-    public PastoController(PastoRepository pastoRepository,  RegistrarPastoUseCase registrarPastoUseCase) {
+    public PastoController(PastoRepository pastoRepository, RegistrarPastoUseCase registrarPastoUseCase,
+                           IniciarManutencaoPastoUseCase iniciarManutencaoPastoUseCase) {
         this.pastoRepository = pastoRepository;
         this.registrarPastoUseCase = registrarPastoUseCase;
+        this.iniciarManutencaoPastoUseCase = iniciarManutencaoPastoUseCase;
     }
 
     @PostMapping
@@ -42,8 +46,7 @@ public class PastoController {
 
     @PutMapping("/{id}/manutencao")
     public ResponseEntity<Void> iniciarReforma(@PathVariable UUID id) {
-        // Caso de Uso para fechar o pasto para adubaçao/descanso
-        // atualizarPastoUseCase.iniciarManutencao(id);
+        iniciarManutencaoPastoUseCase.executar(id);
         return ResponseEntity.noContent().build();
     }
 }

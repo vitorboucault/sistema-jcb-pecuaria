@@ -21,7 +21,7 @@ public class RegistrarNascimentoUseCase {
         if (animalRepository.buscarPorBrinco(command.brincoRgd()).isPresent()) {
             throw new IllegalArgumentException("Erro: Já existe um animal com o brinco " + command.brincoRgd());
         }
-        UUID loteDaMae = null;
+        UUID loteDaMae = command.loteInicial();
 
         if (command.maeId() != null) {
             Animal mae = animalRepository.buscarPorId(command.maeId())

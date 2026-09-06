@@ -13,8 +13,7 @@ import java.time.temporal.ChronoUnit;
 @Service
 public class TokenService {
 
-    @Value("${api.security.token.secret:jcb_agro_secret_key_prod_2026_super_segura}")
-    private String secret;
+    @Value("${JCB_JWT_SECRET:sua-chave-secreta-padrao-super-segura-123456}")    private String secret;
 
     private static final String ISSUER = "sistemajcb-auth";
 

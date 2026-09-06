@@ -10,24 +10,41 @@ export type CategoriaAnimal =
 export type StatusAnimal = 'ATIVO' | 'VENDIDO' | 'MORTO';
 
 export interface Animal {
-    id?: number;
-    brinco: string;
-    brincoRgd?: string;
+    id: string;
+    brincoRgd: string;
     categoria: CategoriaAnimal;
     sexo: 'MACHO' | 'FEMEA';
-    pesoEntrada: number;
-    pesoAtual?: number;
-    dataNascimentoOrEntrada: string;
-    loteId: number;
+    loteId: string | null;
     nomeLote?: string;
-    status?: StatusAnimal;
+    pesoAtual: number | null;
+    status: StatusAnimal;
+    dataNascimento: string;
 }
 
 export interface Lote {
-    id: number;
+    id: string;
     nome: string;
-    descricao: string;
+    fase: 'CRIA' | 'RECRIA' | 'ENGORDA';
     quantidadeAnimais: number;
     pesoMedio: number;
-    categoriaPredominante: CategoriaAnimal;
+}
+
+export interface Pagina<T> {
+    conteudo: T[];
+    numeroPagina: number;
+    tamanhoPagina: number;
+    totalElementos: number;
+    totalPaginas: number;
+}
+
+export interface CadastrarAnimalInput {
+    origem: 'COMPRA' | 'NASCIMENTO';
+    brincoRgd: string;
+    categoria: CategoriaAnimal;
+    sexo: 'MACHO' | 'FEMEA';
+    peso: number;
+    dataNascimento: string;
+    dataEntrada: string;
+    maeId?: string;
+    loteId: string;
 }

@@ -3,7 +3,7 @@
 > Sistema de Gestão de Pecuária de Ciclo Completo
 
 ![status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)
-![java](https://img.shields.io/badge/Java-21-orange)
+![java](https://img.shields.io/badge/Java-24-orange)
 ![spring](https://img.shields.io/badge/Spring%20Boot-4.1.1-brightgreen)
 
 > ⚠️ **Projeto em desenvolvimento — ainda não está pronto para uso.**
@@ -39,7 +39,7 @@ O `frontend/` contém a aplicação cliente, servida separadamente do backend.
 ## Tecnologias
 
 **Backend**
-- Java 21
+- Java 24
 - Spring Boot 4.1.1
 - Maven (multi-módulo)
 - JaCoCo (cobertura de testes)
@@ -68,10 +68,16 @@ npm run dev
 
 ### Pré-requisitos
 
-- JDK 21+
+- JDK 24+
 - Maven (ou usar o wrapper `mvnw` incluído)
 - Node.js (versão a definir)
 - Banco de dados: *a definir*
+
+### Variáveis de ambiente
+
+Copie `.env.example` e defina as credenciais antes de iniciar a aplicação. O backend requer
+`JCB_DB_URL`, `JCB_DB_USERNAME`, `JCB_DB_PASSWORD` e `JCB_JWT_SECRET`. Os testes de integração
+requerem as equivalentes com prefixo `JCB_TEST_`.
 
 ## Estrutura do repositório
 

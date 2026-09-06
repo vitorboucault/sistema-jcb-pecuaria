@@ -1,42 +1,48 @@
 import { useState, type FormEvent } from 'react';
-import type { CategoriaAnimal, Lote } from '../types';
+import type { Animal, CadastrarAnimalInput, CategoriaAnimal, Lote } from '../types';
 import { X, Tag } from 'lucide-react';
-
-interface AnimalInputData {
-    brinco: string;
-    categoria: CategoriaAnimal;
-    sexo: 'MACHO' | 'FEMEA';
-    pesoEntrada: number;
-    dataNascimentoOrEntrada: string;
-    loteId: number;
-}
 
 interface AnimalModalFormProps {
     lotes: Lote[];
+    matrizes: Animal[];
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
-    onCadastrar: (dados: AnimalInputData) => Promise<any>;
+    onCadastrar: (dados: CadastrarAnimalInput) => Promise<unknown>;
 }
 
 export const AnimalModalForm = ({
                                     lotes,
+                                    matrizes,
                                     isOpen,
                                     onClose,
                                     onSuccess,
                                     onCadastrar,
                                 }: AnimalModalFormProps) => {
-    const [brinco, setBrinco] = useState('');
-    const [brincoEletronica, setBrincoEletronica] = useState('');
+    const [origem, setOrigem] = useState<'COMPRA' | 'NASCIMENTO'>('COMPRA');
+    const [brincoRgd, setBrincoRgd] = useState('');
     const [categoria, setCategoria] = useState<CategoriaAnimal>('GARROTE');
     const [sexo, setSexo] = useState<'MACHO' | 'FEMEA'>('MACHO');
-    const [pesoEntrada, setPesoEntrada] = useState<number>(200);
-    const [dataEntrada, setDataEntrada] = useState(new Date().toISOString().split('T')[0]);
-    const [loteId, setLoteId] = useState<number>(lotes[0]?.id || 1);
+    const [peso, setPeso] = useState<number>(200);
+
+    const hoje = new Date().toISOString().split('T')[0];
+    const [dataNascimento, setDataNascimento] = useState(hoje);
+    const [dataEntrada, setDataEntrada] = useState(hoje);
+
+    const [loteId, setLoteId] = useState<string>(lotes[0]?.id || '');
+    const [maeId, setMaeId] = useState('');
     const [carregando, setCarregando] = useState(false);
     const [erro, setErro] = useState<string | null>(null);
 
     if (!isOpen) return null;
+
+    const handleOrigemChange = (novaOrigem: 'COMPRA' | 'NASCIMENTO') => {
+        setOrigem(novaOrigem);
+        if (novaOrigem === 'NASCIMENTO') {
+            setCategoria(sexo === 'MACHO' ? 'BEZERRO' : 'BEZERRA');
+            setPeso(35);
+        }
+    };
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -45,18 +51,21 @@ export const AnimalModalForm = ({
 
         try {
             await onCadastrar({
-                brinco,
+                origem,
+                brincoRgd,
                 categoria,
                 sexo,
-                pesoEntrada: Number(pesoEntrada),
-                dataNascimentoOrEntrada: dataEntrada,
-                loteId: Number(loteId),
+                peso: Number(peso),
+                dataNascimento,
+                dataEntrada: origem === 'NASCIMENTO' ? dataNascimento : dataEntrada,
+                maeId: maeId || undefined,
+                loteId,
             });
             onSuccess();
             onClose();
-        } catch (err) {
+        } catch (err: unknown) {
             console.error(err);
-            setErro('Erro ao registrar animal no banco de dados. Verifique se o brinco já existe.');
+            setErro('Erro ao registrar animal no banco de dados. Verifique os dados informados.');
         } finally {
             setCarregando(false);
         }
@@ -68,7 +77,7 @@ export const AnimalModalForm = ({
                 <div className="flex items-center justify-between pb-4 border-b border-stone-800 mb-6">
                     <h2 className="text-lg font-black text-white flex items-center gap-2">
                         <Tag className="w-5 h-5 text-emerald-500" />
-                        REGISTRAR NOVO ANIMAL / NASCIMENTO
+                        REGISTRO DE ENTRADA NO REBANHO
                     </h2>
                     <button onClick={onClose} className="text-stone-400 hover:text-white transition-colors cursor-pointer">
                         <X className="w-5 h-5" />
@@ -82,35 +91,43 @@ export const AnimalModalForm = ({
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+
+                    {/* Seletor de Origem (Nascimento vs Compra) */}
+                    <div className="flex gap-2 p-1 bg-stone-950 rounded-xl border border-stone-800">
+                        <button
+                            type="button"
+                            onClick={() => handleOrigemChange('COMPRA')}
+                            className={`flex-1 py-2 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer ${
+                                origem === 'COMPRA' ? 'bg-emerald-600 text-stone-950' : 'text-stone-400 hover:text-white'
+                            }`}
+                        >
+                            Compra / Aquisição
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleOrigemChange('NASCIMENTO')}
+                            className={`flex-1 py-2 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer ${
+                                origem === 'NASCIMENTO' ? 'bg-emerald-600 text-stone-950' : 'text-stone-400 hover:text-white'
+                            }`}
+                        >
+                            Nascimento na Fazenda
+                        </button>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
-                                Brinco Visual *
+                                Brinco / RGD *
                             </label>
                             <input
                                 type="text"
                                 required
-                                value={brinco}
-                                onChange={(e) => setBrinco(e.target.value)}
+                                value={brincoRgd}
+                                onChange={(e) => setBrincoRgd(e.target.value)}
                                 placeholder="Ex: BR-9500"
-                                className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white placeholder-stone-600 focus:outline-none focus:border-emerald-500"
+                                className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white placeholder-stone-600 focus:outline-none focus:border-emerald-500 font-mono"
                             />
                         </div>
-                        <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
-                                Brinco Eletrônico (RFID)
-                            </label>
-                            <input
-                                type="text"
-                                value={brincoEletronica}
-                                onChange={(e) => setBrincoEletronica(e.target.value)}
-                                placeholder="Opcional"
-                                className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white placeholder-stone-600 focus:outline-none focus:border-emerald-500"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
                                 Categoria Zootécnica *
@@ -118,17 +135,30 @@ export const AnimalModalForm = ({
                             <select
                                 value={categoria}
                                 onChange={(e) => setCategoria(e.target.value as CategoriaAnimal)}
-                                className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                                disabled={origem === 'NASCIMENTO'}
+                                className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 disabled:opacity-60"
                             >
-                                <option value="BEZERRO">Bezerro</option>
-                                <option value="BEZERRA">Bezerra</option>
-                                <option value="GARROTE">Garrote</option>
-                                <option value="NOVILHA">Novilha</option>
-                                <option value="BOI">Boi</option>
-                                <option value="VACA_REPRODUTORA">Vaca Reprodutora</option>
-                                <option value="TOURO">Touro</option>
+                                {origem === 'NASCIMENTO' ? (
+                                    <>
+                                        <option value="BEZERRO">Bezerro</option>
+                                        <option value="BEZERRA">Bezerra</option>
+                                    </>
+                                ) : (
+                                    <>
+                                        <option value="BEZERRO">Bezerro</option>
+                                        <option value="BEZERRA">Bezerra</option>
+                                        <option value="GARROTE">Garrote</option>
+                                        <option value="NOVILHA">Novilha</option>
+                                        <option value="BOI">Boi</option>
+                                        <option value="VACA">Vaca</option>
+                                        <option value="TOURO">Touro</option>
+                                    </>
+                                )}
                             </select>
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
                                 Sexo *
@@ -142,52 +172,110 @@ export const AnimalModalForm = ({
                                 <option value="FEMEA">Fêmea</option>
                             </select>
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
-                                Peso Inicial / Entrada (kg) *
+                                {origem === 'NASCIMENTO' ? 'Peso ao Nascer (kg) *' : 'Peso de Entrada (kg) *'}
                             </label>
                             <input
                                 type="number"
                                 step="0.1"
                                 required
-                                value={pesoEntrada}
-                                onChange={(e) => setPesoEntrada(Number(e.target.value))}
-                                className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 font-mono"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
-                                Data de Entrada *
-                            </label>
-                            <input
-                                type="date"
-                                required
-                                value={dataEntrada}
-                                onChange={(e) => setDataEntrada(e.target.value)}
+                                value={peso}
+                                onChange={(e) => setPeso(Number(e.target.value))}
                                 className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 font-mono"
                             />
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
-                            Lote de Manejo *
-                        </label>
-                        <select
-                            value={loteId}
-                            onChange={(e) => setLoteId(Number(e.target.value))}
-                            className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                        >
-                            {lotes.map((lote) => (
-                                <option key={lote.id} value={lote.id}>
-                                    {lote.nome} ({lote.categoriaPredominante})
-                                </option>
-                            ))}
-                        </select>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
+                                {origem === 'COMPRA' ? 'Data de Nascimento *' : 'Data do Parto *'}
+                            </label>
+                            <input
+                                type="date"
+                                required
+                                value={dataNascimento}
+                                onChange={(e) => {
+                                    setDataNascimento(e.target.value);
+                                    if (origem === 'NASCIMENTO') setDataEntrada(e.target.value);
+                                }}
+                                className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 font-mono"
+                            />
+                        </div>
+
+                        {origem === 'COMPRA' ? (
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
+                                    Data de Chegada *
+                                </label>
+                                <input
+                                    type="date"
+                                    required
+                                    value={dataEntrada}
+                                    onChange={(e) => setDataEntrada(e.target.value)}
+                                    className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 font-mono"
+                                />
+                            </div>
+                        ) : (
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
+                                    Lote de Manejo (Opcional)
+                                </label>
+                                <select
+                                    value={loteId || ''}
+                                    onChange={(e) => setLoteId(e.target.value)}
+                                    className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                                >
+                                    <option value="">Nenhum lote atribuído (Avulso)</option>
+                                    {lotes.map((lote) => (
+                                        <option key={lote.id} value={lote.id}>
+                                            {lote.nome}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </div>
+
+                    {origem === 'NASCIMENTO' && (
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
+                                Matriz (opcional)
+                            </label>
+                            <select
+                                value={maeId}
+                                onChange={(e) => setMaeId(e.target.value)}
+                                className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                            >
+                                <option value="">Não informar matriz</option>
+                                {matrizes.map((matriz) => (
+                                    <option key={matriz.id} value={matriz.id}>
+                                        {matriz.brincoRgd} — {matriz.categoria}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {origem === 'COMPRA' && (
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
+                                Lote de Manejo *
+                            </label>
+                            <select
+                                value={loteId}
+                                onChange={(e) => setLoteId(e.target.value)}
+                                className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                            >
+                                {lotes.map((lote) => (
+                                    <option key={lote.id} value={lote.id}>
+                                        {lote.nome}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     <div className="pt-4 flex items-center justify-end gap-3">
                         <button
@@ -202,7 +290,7 @@ export const AnimalModalForm = ({
                             disabled={carregando}
                             className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-stone-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-emerald-950/30 disabled:opacity-50"
                         >
-                            {carregando ? 'Salvando no Banco...' : 'Salvar Animal'}
+                            {carregando ? 'Salvando...' : 'Salvar Animal'}
                         </button>
                     </div>
                 </form>

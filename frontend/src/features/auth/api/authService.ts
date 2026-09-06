@@ -3,7 +3,7 @@ import type { LoginCredentials, AuthResponse } from '../types';
 
 export const authService = {
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
-        const response = await api.post<AuthResponse>('/auth/login', {
+        const response = await api.post<AuthResponse>('v1/auth/login', {
             usuario: credentials.login,
             senha: credentials.senha,
         });

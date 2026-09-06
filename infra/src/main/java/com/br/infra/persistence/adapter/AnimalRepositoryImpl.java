@@ -27,9 +27,10 @@ public class AnimalRepositoryImpl implements AnimalRepository {
     }
 
     @Override
-    public void salvar(Animal animal) {
+    public Animal salvar(Animal animal) {
         AnimalEntity entity = mapper.toEntity(animal);
         springDataRepository.save(entity);
+        return animal;
     }
 
     @Override

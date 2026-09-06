@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
+import { isAxiosError } from 'axios';
 import { rebanhoService } from '../api/rebanhoService';
-import type { Animal, Lote } from '../types';
+import type { Animal, CadastrarAnimalInput, Lote } from '../types';
 import { AnimalModalForm } from '../components/AnimalModalForm';
 import { Users, Plus, Tag, AlertCircle } from 'lucide-react';
 
@@ -24,9 +25,10 @@ export const RebanhoPage = () => {
             setAnimais(Array.isArray(dadosAnimais) ? dadosAnimais : []);
             setLotes(Array.isArray(dadosLotes) ? dadosLotes : []);
             setErroBanco(null);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Falha ao comunicar com o backend:', err);
-            setErroBanco(err.response?.data?.mensagem || 'Erro ao carregar dados do banco PostgreSQL.');
+            const mensagem = isAxiosError<{ mensagem?: string }>(err) ? err.response?.data?.mensagem : undefined;
+            setErroBanco(mensagem || 'Erro ao carregar dados do banco PostgreSQL.');
             setAnimais([]);
             setLotes([]);
         } finally {
@@ -35,10 +37,11 @@ export const RebanhoPage = () => {
     }, []);
 
     useEffect(() => {
-        carregarDados();
+        const timeout = window.setTimeout(() => void carregarDados(), 0);
+        return () => window.clearTimeout(timeout);
     }, [carregarDados]);
 
-    const handleCadastrarAnimal = async (dados: any) => {
+    const handleCadastrarAnimal = async (dados: CadastrarAnimalInput) => {
         await rebanhoService.cadastrarAnimal(dados);
         await carregarDados();
     };
@@ -96,17 +99,17 @@ export const RebanhoPage = () => {
                     </div>
                 ) : (
                     listaLotesSegura.map((lote) => (
-                        <div key={lote?.id || Math.random()} className="border border-stone-800 bg-stone-900/80 rounded-2xl p-6 shadow-xl hover:border-emerald-500/50 transition-all">
+                        <div key={lote.id} className="border border-stone-800 bg-stone-900/80 rounded-2xl p-6 shadow-xl hover:border-emerald-500/50 transition-all">
                             <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">
-                  {lote?.categoriaPredominante || 'GERAL'}
+                  {lote?.fase || 'SEM FASE'}
                 </span>
                                 <span className="px-2.5 py-0.5 bg-stone-950 border border-stone-800 rounded-full text-xs font-mono text-stone-300">
                   {lote?.quantidadeAnimais ?? 0} cabeças
                 </span>
                             </div>
                             <h3 className="text-lg font-bold text-white mb-1">{lote?.nome || 'Lote sem nome'}</h3>
-                            <p className="text-xs text-stone-400 mb-4">{lote?.descricao || 'Sem descrição cadastrada'}</p>
+                            <p className="text-xs text-stone-400 mb-4">Lote em fase de {lote?.fase?.toLowerCase() || 'manejo'}.</p>
                             <div className="flex items-center justify-between pt-3 border-t border-stone-800 text-xs font-mono">
                                 <span className="text-stone-400">Peso Médio Atual:</span>
                                 <span className="text-emerald-400 font-bold">{lote?.pesoMedio ?? 0} kg</span>
@@ -133,7 +136,7 @@ export const RebanhoPage = () => {
                             <option value="GARROTE">Garrote</option>
                             <option value="NOVILHA">Novilha</option>
                             <option value="BOI">Boi</option>
-                            <option value="VACA_REPRODUTORA">Vaca Reprodutora</option>
+                            <option value="VACA">Vaca</option>
                             <option value="TOURO">Touro</option>
                         </select>
                     </div>
@@ -147,31 +150,29 @@ export const RebanhoPage = () => {
                             <th className="px-4 py-3">Categoria</th>
                             <th className="px-4 py-3">Sexo</th>
                             <th className="px-4 py-3">Lote Atual</th>
-                            <th className="px-4 py-3">Peso Entrada</th>
-                            <th className="px-4 py-3">Peso Atual</th>
+                            <th className="px-4 py-3">Última Pesagem</th>
                             <th className="px-4 py-3">Status</th>
                         </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-800 text-stone-300">
                         {animaisFiltrados.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="text-center py-8 text-stone-500 font-mono">
+                                <td colSpan={6} className="text-center py-8 text-stone-500 font-mono">
                                     Nenhum animal cadastrado ou endpoint `/api/v1/animais` indisponível.
                                 </td>
                             </tr>
                         ) : (
                             animaisFiltrados.map((animal) => (
-                                <tr key={animal?.id || Math.random()} className="hover:bg-stone-800/40 transition-colors">
+                                <tr key={animal.id} className="hover:bg-stone-800/40 transition-colors">
                                     <td className="px-4 py-3.5 font-mono font-bold text-white flex items-center gap-2">
                                         <Tag className="w-3.5 h-3.5 text-emerald-500" />
-                                        {animal?.brinco || 'S/N'}
+                                        {animal?.brincoRgd || 'S/N'}
                                     </td>
                                     <td className="px-4 py-3.5 font-medium">{animal?.categoria || 'N/D'}</td>
                                     <td className="px-4 py-3.5 text-stone-400">{animal?.sexo || 'N/D'}</td>
                                     <td className="px-4 py-3.5 text-stone-300">{animal?.nomeLote || 'Sem Lote'}</td>
-                                    <td className="px-4 py-3.5 font-mono">{animal?.pesoEntrada ?? 0} kg</td>
                                     <td className="px-4 py-3.5 font-mono text-emerald-400 font-bold">
-                                        {animal?.pesoAtual ?? animal?.pesoEntrada ?? 0} kg
+                                        {animal?.pesoAtual == null ? 'Sem pesagem' : `${animal.pesoAtual} kg`}
                                     </td>
                                     <td className="px-4 py-3.5">
                       <span className="px-2.5 py-1 bg-emerald-950/60 border border-emerald-800 text-emerald-400 rounded-full font-mono text-[10px]">
@@ -189,6 +190,7 @@ export const RebanhoPage = () => {
             {/* Modal de Cadastro */}
             <AnimalModalForm
                 lotes={listaLotesSegura}
+                matrizes={listaAnimaisSegura.filter((animal) => animal.sexo === 'FEMEA')}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSuccess={carregarDados}

@@ -5,11 +5,11 @@ export interface LoginCredentials {
 
 export interface AuthResponse {
     token: string;
-    login?: string;
-    nome?: string;
+    usuario: string;
 }
 
 export interface UserSession {
     login: string;
     nome: string;
+    token: string;
 }

@@ -9,5 +9,10 @@ public record RegistrarNascimentoCommand(
         String brincoRgd,
         LocalDate dataNascimento,
         Sexo sexo,
-        UUID maeId
-) {}
+        UUID maeId,
+        UUID loteInicial
+) {
+    public RegistrarNascimentoCommand(String brincoRgd, LocalDate dataNascimento, Sexo sexo, UUID maeId) {
+        this(brincoRgd, dataNascimento, sexo, maeId, null);
+    }
+}

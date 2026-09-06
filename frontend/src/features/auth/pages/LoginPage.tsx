@@ -5,13 +5,19 @@ import { useAuth } from '../hooks/useAuth';
 export const LoginPage = () => {
     const [usuario, setUsuario] = useState('dono');
     const [senha, setSenha] = useState('123456');
-    const { loginLocal } = useAuth();
+    const { login } = useAuth();
     const navigate = useNavigate();
+    const [erro, setErro] = useState<string | null>(null);
 
-    const handleEntrar = (e: FormEvent) => {
+    const handleEntrar = async (e: FormEvent) => {
         e.preventDefault();
-        loginLocal(usuario);
-        navigate('/dashboard');
+        setErro(null);
+        try {
+            await login(usuario, senha);
+            navigate('/dashboard');
+        } catch {
+            setErro('Não foi possível autenticar. Verifique usuário e senha.');
+        }
     };
 
     return (
@@ -29,6 +35,7 @@ export const LoginPage = () => {
                 </div>
 
                 <form onSubmit={handleEntrar} className="space-y-5">
+                    {erro && <p className="text-sm text-red-400">{erro}</p>}
                     <div>
                         <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1.5">
                             Login:

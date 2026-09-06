@@ -97,4 +97,20 @@ public class Animal {
     public Status getStatus() { return status; }
     public UUID getMaeId() { return maeId; }
     public UUID getLoteId() { return loteId; }
+
+    public void setCategoriaAtual(Categoria categoriaAtual) {
+        this.categoriaAtual = categoriaAtual;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public void setMaeId(UUID maeId) {
+        this.maeId = maeId;
+    }
+
+    public void setLoteId(UUID loteId) {
+        this.loteId = loteId;
+    }
 }
