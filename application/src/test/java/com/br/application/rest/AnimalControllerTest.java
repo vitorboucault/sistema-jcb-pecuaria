@@ -124,6 +124,11 @@ class AnimalControllerTest {
         public void excluirPorId(UUID id) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public boolean existeFilhoComMaeId(UUID maeId) {
+            return false;
+        }
     }
 
     private static class LoteRepositoryFake implements LoteRepository {

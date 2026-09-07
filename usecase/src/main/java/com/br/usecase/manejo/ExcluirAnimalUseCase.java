@@ -58,6 +58,12 @@ public class ExcluirAnimalUseCase {
             throw new IllegalStateException("Animal possui historico ou vinculos e nao pode ser excluido.");
         }
 
+        if (animalRepository.existeFilhoComMaeId(animalId)) {
+            throw new IllegalStateException(
+                    "Esta matriz possui animais vinculados e não pode ser excluída."
+            );
+        }
+
         removerRegistrosIniciais(pesagens, despesas);
         animalRepository.excluirPorId(animalId);
     }

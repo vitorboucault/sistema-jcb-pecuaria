@@ -288,7 +288,13 @@ export const RebanhoPage = () => {
             {/* Modal de Cadastro */}
             <AnimalModalForm
                 lotes={listaLotesSegura}
-                matrizes={listaAnimaisSegura.filter((animal) => animal.sexo === 'FEMEA')}
+                matrizes={listaAnimaisSegura.filter(
+                    (animal) =>
+                        animal.sexo === 'FEMEA' &&
+                        animal.status === 'ATIVO' &&
+                        animal.categoria === 'VACA' ||
+                        animal.categoria === 'NOVILHA'
+                )}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSuccess={carregarDados}

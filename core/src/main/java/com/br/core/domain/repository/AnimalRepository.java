@@ -20,4 +20,5 @@ public interface AnimalRepository {
     long contarAnimaisAtivos();
     Map<Categoria, Long> contarAtivosPorCategoria();
     void excluirPorId(UUID id);
+    boolean existeFilhoComMaeId(UUID maeId);
 }

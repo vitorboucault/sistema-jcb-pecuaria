@@ -250,4 +250,5 @@ class ExcluirAnimalUseCaseTest {
         verify(animalRepository, never()).excluirPorId(animalId);
         verify(despesaRepository, never()).excluirPorId(despesaOperacional.getId());
     }
+
 }

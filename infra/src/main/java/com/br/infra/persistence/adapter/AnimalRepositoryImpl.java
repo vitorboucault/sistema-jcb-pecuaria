@@ -97,4 +97,9 @@ public class AnimalRepositoryImpl implements AnimalRepository {
         return new Pagina<>(animais, pageResult.getNumber(), pageResult.getSize(),
                 pageResult.getTotalElements(), pageResult.getTotalPages());
     }
+
+    @Override
+    public boolean existeFilhoComMaeId(UUID maeId) {
+        return springDataRepository.existsByMaeId(maeId);
+    }
 }

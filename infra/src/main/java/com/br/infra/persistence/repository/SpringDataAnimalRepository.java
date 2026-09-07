@@ -39,4 +39,6 @@ public interface SpringDataAnimalRepository extends JpaRepository<AnimalEntity, 
 
     @Query("SELECT a.categoriaAtual AS categoria, COUNT(a.id) AS total FROM AnimalEntity a WHERE a.status = 'ATIVO' GROUP BY a.categoriaAtual")
     List<ContagemPorCategoriaProjection> contarAtivosPorCategoria();
+
+    boolean existsByMaeId(UUID maeId);
 }

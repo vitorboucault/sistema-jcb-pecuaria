@@ -11,10 +11,10 @@ export const MainLayout = () => {
     };
 
     const navItems = [
-        { label: 'Dashboard Executivo', path: '/dashboard' },
-        { label: 'Rebanho & Lotes', path: '/rebanho' },
-        { label: 'Pesagens & GMD', path: '/pesagens' },
-        { label: 'Nutrição & Cocho', path: '/nutricao' },
+        { label: 'Inicio', path: '/dashboard' },
+        { label: 'Rebanho', path: '/rebanho' },
+        { label: 'Pesagens', path: '/pesagens' },
+        { label: 'Nutrição', path: '/nutricao' },
         { label: 'Pastagens & Lotação', path: '/pastos' },
         { label: 'Reprodução & Monta', path: '/reproducao' },
     ];
