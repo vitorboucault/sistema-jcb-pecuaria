@@ -19,6 +19,8 @@ import com.br.usecase.manejo.RegistrarMorteAnimalUseCase;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
+
 
 import java.time.LocalDate;
 import java.util.List;
@@ -54,7 +56,9 @@ public class AnimalController {
 
     @PostMapping
     @Transactional
-    public ResponseEntity<UUID> cadastrarAnimal(@RequestBody AnimalInputDTO dto) {
+    public ResponseEntity<UUID> cadastrarAnimal(
+            @Valid @RequestBody AnimalInputDTO dto
+    ) {
         UUID animalId;
         UUID loteUuid = null;
 

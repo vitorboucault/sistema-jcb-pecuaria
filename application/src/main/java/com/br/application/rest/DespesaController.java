@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
+import com.br.application.dto.RegistrarDespesaRequest;
+import jakarta.validation.Valid;
 
 import java.util.UUID;
 
@@ -23,9 +25,19 @@ public class DespesaController {
         this.despesaRepository = despesaRepository;
     }
 
-    @PostMapping
-    public ResponseEntity<Void> lancarDespesa(@RequestBody RegistrarDespesaCommand command) {
+    public ResponseEntity<Void> lancarDespesa(
+            @Valid @RequestBody RegistrarDespesaRequest request
+    ) {
+        var command = new RegistrarDespesaCommand(
+                request.descricao(),
+                request.valor(),
+                request.dataOcorrencia(),
+                request.categoria(),
+                request.tipoDeCusto(),
+                request.referenciaId()
+        );
         registrarDespesaUseCase.executar(command);
+
         return ResponseEntity.status(201).build();
     }
 

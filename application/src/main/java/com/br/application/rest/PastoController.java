@@ -8,6 +8,8 @@ import com.br.core.domain.model.Pasto;
 import com.br.core.domain.repository.PastoRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.br.application.dto.RegistrarPastoRequest;
+import jakarta.validation.Valid;
 
 import java.util.UUID;
 
@@ -25,8 +27,17 @@ public class PastoController {
         this.iniciarManutencaoPastoUseCase = iniciarManutencaoPastoUseCase;
     }
 
+
+
     @PostMapping
-    public ResponseEntity<UUID> cadastrar(@RequestBody RegistrarPastoCommand command) {
+    public ResponseEntity<UUID> cadastrar(
+            @Valid @RequestBody RegistrarPastoRequest request
+    ) {
+        var command = new RegistrarPastoCommand(
+                request.nome(),
+                request.areaHectares(),
+                request.capacidadeSuporteUa()
+        );
         UUID novoPastoId = registrarPastoUseCase.executar(command);
         return ResponseEntity.status(201).body(novoPastoId);
     }

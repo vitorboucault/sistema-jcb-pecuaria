@@ -41,6 +41,17 @@ CYGWIN* | MINGW*)
   ;;
 esac
 
+# This project is standardized on Java 24. On macOS, prefer an installed JDK 24
+# when JAVA_HOME was not explicitly provided by the caller.
+if [ -z "${JAVA_HOME-}" ] && [ "$(uname)" = Darwin ] && [ -x /usr/libexec/java_home ]; then
+  JAVA_HOME="$(/usr/libexec/java_home -v 24 2>/dev/null || :)"
+  if [ -n "$JAVA_HOME" ]; then
+    export JAVA_HOME
+  else
+    unset JAVA_HOME
+  fi
+fi
+
 # set JAVACMD and JAVACCMD
 set_java_home() {
   # For Cygwin and MinGW, ensure paths are in Unix format before anything is touched
