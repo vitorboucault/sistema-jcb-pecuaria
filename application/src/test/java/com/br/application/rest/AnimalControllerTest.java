@@ -13,7 +13,8 @@ import com.br.core.domain.repository.AnimalRepository;
 import com.br.core.domain.repository.LoteRepository;
 import com.br.core.domain.repository.PesagemRepository;
 import com.br.usecase.manejo.ReverterMorteAnimalUseCase;
-import org.springframework.http.ResponseEntity;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -24,22 +25,27 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class AnimalControllerTest {
 
     @Test
     @DisplayName("Endpoint de reversao de morte chama o caso de uso e retorna 204")
-    void reverterMorteRetornaNoContent() {
+    void reverterMorteRetornaNoContent() throws Exception {
         UUID animalId = UUID.randomUUID();
-        ReverterMorteAnimalUseCaseSpy reverterMorte = new ReverterMorteAnimalUseCaseSpy();
+        ReverterMorteAnimalUseCase reverterMorte = mock(ReverterMorteAnimalUseCase.class);
         AnimalController controller = new AnimalController(
                 null, null, null, null, null, null, null, null, null, null, null, reverterMorte
         );
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 
-        ResponseEntity<Void> response = controller.reverterMorte(animalId);
+        mockMvc.perform(post("/api/v1/animais/{id}/reverter-morte", animalId))
+                .andExpect(status().isNoContent());
 
-        assertThat(response.getStatusCode().value()).isEqualTo(204);
-        assertThat(reverterMorte.animalIdRecebido).isEqualTo(animalId);
+        verify(reverterMorte).executar(animalId);
     }
 
     @Test
@@ -89,19 +95,6 @@ class AnimalControllerTest {
         assertThat(pesagemRepository.buscarUltimasEmLoteChamadas).isEqualTo(1);
         assertThat(pesagemRepository.buscarUltimaIndividualChamadas).isZero();
         assertThat(pesagemRepository.animalIdsBuscados).containsExactly(animalComLoteId, animalSemLoteId);
-    }
-
-    private static class ReverterMorteAnimalUseCaseSpy extends ReverterMorteAnimalUseCase {
-        private UUID animalIdRecebido;
-
-        private ReverterMorteAnimalUseCaseSpy() {
-            super(null);
-        }
-
-        @Override
-        public void executar(UUID animalId) {
-            animalIdRecebido = animalId;
-        }
     }
 
     private static class AnimalRepositoryFake implements AnimalRepository {

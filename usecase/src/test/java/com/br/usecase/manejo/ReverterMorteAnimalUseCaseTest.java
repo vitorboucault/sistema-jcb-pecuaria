@@ -36,7 +36,7 @@ class ReverterMorteAnimalUseCaseTest {
     @DisplayName("Reverte morte, limpa data e mantém animal sem lote")
     void deveReverterMorte() {
         UUID animalId = UUID.randomUUID();
-        Animal animal = animal(Status.MORTO, null, LocalDate.now().minusDays(1));
+        Animal animal = animal(animalId, Status.MORTO, null, LocalDate.now().minusDays(1));
         when(animalRepository.buscarPorId(animalId)).thenReturn(Optional.of(animal));
 
         useCase.executar(animalId);
@@ -62,7 +62,7 @@ class ReverterMorteAnimalUseCaseTest {
     @Test
     void animalAtivoNaoPodeReverterMorteESemSalvar() {
         UUID animalId = UUID.randomUUID();
-        Animal animal = animal(Status.ATIVO, null, null);
+        Animal animal = animal(animalId, Status.ATIVO, null, null);
         when(animalRepository.buscarPorId(animalId)).thenReturn(Optional.of(animal));
 
         assertThatThrownBy(() -> useCase.executar(animalId))
@@ -74,7 +74,7 @@ class ReverterMorteAnimalUseCaseTest {
     @Test
     void animalVendidoNaoPodeReverterMorteESemSalvar() {
         UUID animalId = UUID.randomUUID();
-        Animal animal = animal(Status.VENDIDO, null, null);
+        Animal animal = animal(animalId, Status.VENDIDO, null, null);
         when(animalRepository.buscarPorId(animalId)).thenReturn(Optional.of(animal));
 
         assertThatThrownBy(() -> useCase.executar(animalId))
@@ -83,8 +83,8 @@ class ReverterMorteAnimalUseCaseTest {
         verify(animalRepository, never()).salvar(org.mockito.ArgumentMatchers.any());
     }
 
-    private Animal animal(Status status, UUID loteId, LocalDate dataMorte) {
-        return new Animal(UUID.randomUUID(), "BRINCO-" + UUID.randomUUID(),
+    private Animal animal(UUID animalId, Status status, UUID loteId, LocalDate dataMorte) {
+        return new Animal(animalId, "BRINCO-" + UUID.randomUUID(),
                 LocalDate.now().minusYears(2), Sexo.MACHO, Categoria.BOI, status, null, loteId, dataMorte);
     }
 }
