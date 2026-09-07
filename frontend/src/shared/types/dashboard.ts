@@ -1,4 +1,5 @@
 export interface DashboardExecutivo {
+    totalRebanho: number;
     margemBrutaHectare: number;
     pontoEquilibrioArrobas: number;
     desembolsoCabecaMes: number;

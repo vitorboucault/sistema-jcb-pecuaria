@@ -1,20 +1,25 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../../shared/api/client.ts';
 import { KpiCard } from '../../auth/components/kpiCard.tsx';
-import {TrendingUp, DollarSign, Scale, Activity, Percent, MapPin, ShieldAlert, Layers
+import type { DashboardExecutivo } from '../../../shared/types/dashboard.ts';
+import {TrendingUp, DollarSign, Scale, Activity, Percent, MapPin, ShieldAlert, Layers, Beef
 } from 'lucide-react';
 
-interface DashboardData {
-    margemBrutaHectare: number;
-    pontoEquilibrioArrobas: number;
-    desembolsoCabecaMes: number;
-    custoArrobaProduzida: number;
-    ganhoMedioDiarioGlobal: number;
-    conversaoAlimentarMedia: number;
-    taxaPrenhez: number;
-    taxaDesmame: number;
-    taxaLotacao: number;
-}
+type DashboardData = DashboardExecutivo;
+
+const PRECO_ARROBA_REFERENCIA = 310;
+
+const obterParametrosDashboard = () => {
+    const hoje = new Date();
+    const inicioSafra = new Date(hoje.getFullYear(), 0, 1).toISOString().slice(0, 10);
+    const fimSafra = hoje.toISOString().slice(0, 10);
+
+    return {
+        inicioSafra,
+        fimSafra,
+        precoArrobaHoje: PRECO_ARROBA_REFERENCIA,
+    };
+};
 
 export const DashboardExecutivoPage = () => {
     const [data, setData] = useState<DashboardData | null>(null);
@@ -22,7 +27,9 @@ export const DashboardExecutivoPage = () => {
     const [, setErroBanco] = useState<string | null>(null);
 
     useEffect(() => {
-        api.get<DashboardData>('/v1/dashboard/executivo')
+        api.get<DashboardData>('/v1/dashboard/executivo', {
+            params: obterParametrosDashboard(),
+        })
             .then((response) => {
                 setData(response.data);
                 setErroBanco(null);
@@ -64,7 +71,31 @@ export const DashboardExecutivoPage = () => {
                 </div>
             </div>
 
-            {/* Grid dos 8 KPIs */}
+            <div className="border border-emerald-500/30 bg-stone-950 p-7 shadow-xl">
+                <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-950/40">
+                            <Beef className="h-7 w-7 text-emerald-400" />
+                        </div>
+                        <div>
+                            <span className="text-xs font-bold uppercase tracking-widest text-stone-400">
+                                Rebanho Total
+                            </span>
+                            <div className="mt-2 flex items-baseline gap-3">
+                                <span className="text-5xl font-black text-white">
+                                    {Math.trunc(data?.totalRebanho ?? 0).toLocaleString('pt-BR')}
+                                </span>
+                                <span className="text-lg font-semibold text-emerald-400">cabeças</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="max-w-sm border-t border-stone-800 pt-4 text-xs font-medium leading-relaxed text-stone-400 md:border-l md:border-t-0 md:pl-6 md:pt-0">
+                        Animais ativos considerados nos indicadores econômicos e zootécnicos da safra.
+                    </div>
+                </div>
+            </div>
+
+            {/* Grid dos demais KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
                 <KpiCard

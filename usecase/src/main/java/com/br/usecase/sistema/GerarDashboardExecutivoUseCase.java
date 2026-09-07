@@ -62,6 +62,7 @@ public class GerarDashboardExecutivoUseCase {
 
         List<UUID> rebanhoAtivoIds = animalRepository.buscarAnimaisElegiveisParaEvolucao()
                 .stream().map(Animal::getId).collect(Collectors.toList());
+        long totalRebanho = animalRepository.contarAnimaisAtivos();
 
         BigDecimal margemBruta = margemBrutaUseCase.executar(inicioSafra, fimSafra);
         BigDecimal pontoEquilibrio = pontoEquilibrioUseCase.executar(inicioSafra, fimSafra, precoArrobaHoje);
@@ -75,6 +76,7 @@ public class GerarDashboardExecutivoUseCase {
         BigDecimal taxaLotacao = pastoReferenciaId != null ? taxaLotacaoUseCase.executar(pastoReferenciaId) : BigDecimal.ZERO;
 
         return new DashboardExecutivoDTO(
+                totalRebanho,
                 margemBruta,
                 pontoEquilibrio,
                 desembolso,

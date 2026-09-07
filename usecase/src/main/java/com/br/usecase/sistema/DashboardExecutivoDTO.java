@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 
 public class DashboardExecutivoDTO {
 
+    private final long totalRebanho;
     private final BigDecimal margemBrutaHectare;
     private final BigDecimal pontoEquilibrioArrobas;
     private final BigDecimal desembolsoCabecaMes;
@@ -16,6 +17,7 @@ public class DashboardExecutivoDTO {
     private final BigDecimal taxaLotacao;
 
     public DashboardExecutivoDTO(
+            long totalRebanho,
             BigDecimal margemBrutaHectare,
             BigDecimal pontoEquilibrioArrobas,
             BigDecimal desembolsoCabecaMes,
@@ -26,6 +28,7 @@ public class DashboardExecutivoDTO {
             BigDecimal taxaDesmame,
             BigDecimal taxaLotacao
     ) {
+        this.totalRebanho = totalRebanho;
         this.margemBrutaHectare = valorOuZero(margemBrutaHectare);
         this.pontoEquilibrioArrobas = valorOuZero(pontoEquilibrioArrobas);
         this.desembolsoCabecaMes = valorOuZero(desembolsoCabecaMes);
@@ -40,6 +43,10 @@ public class DashboardExecutivoDTO {
 
     private static BigDecimal valorOuZero(BigDecimal valor) {
         return valor != null ? valor : BigDecimal.ZERO;
+    }
+
+    public long getTotalRebanho() {
+        return totalRebanho;
     }
 
     public BigDecimal getMargemBrutaHectare() {
