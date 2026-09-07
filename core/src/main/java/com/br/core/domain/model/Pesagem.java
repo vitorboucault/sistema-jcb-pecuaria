@@ -3,7 +3,6 @@ package com.br.core.domain.model;
 import com.br.core.domain.enums.OrigemPesagem;
 
 import java.time.LocalDate;
-import java.util.Objects;
 import java.util.UUID;
 
 public class Pesagem {
@@ -32,7 +31,10 @@ public class Pesagem {
         this.dataPesagem = dataPesagem;
         this.pesoKg = pesoKg;
         this.jejum = jejum;
-        this.origem = Objects.requireNonNull(origem, "A origem da pesagem é obrigatória.");
+        if (origem == null) {
+            throw new IllegalArgumentException("A origem da pesagem é obrigatória.");
+        }
+        this.origem = origem;
     }
 
     public Pesagem(UUID id, UUID animalId, LocalDate dataPesagem, double pesoKg, boolean jejum) {
@@ -45,7 +47,10 @@ public class Pesagem {
         this.dataPesagem = dataPesagem;
         this.pesoKg = pesoKg;
         this.jejum = jejum;
-        this.origem = Objects.requireNonNull(origem, "A origem da pesagem é obrigatória.");
+        if (origem == null) {
+            throw new IllegalArgumentException("A origem da pesagem é obrigatória.");
+        }
+        this.origem = origem;
     }
 
     public UUID getId() { return id; }

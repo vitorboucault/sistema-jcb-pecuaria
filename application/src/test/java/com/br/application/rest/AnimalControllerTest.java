@@ -12,6 +12,9 @@ import com.br.core.domain.model.Pesagem;
 import com.br.core.domain.repository.AnimalRepository;
 import com.br.core.domain.repository.LoteRepository;
 import com.br.core.domain.repository.PesagemRepository;
+import com.br.usecase.manejo.ReverterMorteAnimalUseCase;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -22,8 +25,28 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class AnimalControllerTest {
+
+    @Test
+    @DisplayName("Endpoint de reversao de morte chama o caso de uso e retorna 204")
+    void reverterMorteRetornaNoContent() throws Exception {
+        UUID animalId = UUID.randomUUID();
+        ReverterMorteAnimalUseCase reverterMorte = mock(ReverterMorteAnimalUseCase.class);
+        AnimalController controller = new AnimalController(
+                null, null, null, null, null, null, null, null, null, null, null, reverterMorte
+        );
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+
+        mockMvc.perform(post("/api/v1/animais/{id}/reverter-morte", animalId))
+                .andExpect(status().isNoContent());
+
+        verify(reverterMorte).executar(animalId);
+    }
 
     @Test
     @DisplayName("Listagem de animais busca lotes e ultimas pesagens em lote")
@@ -49,6 +72,7 @@ class AnimalControllerTest {
                 animalRepository,
                 loteRepository,
                 pesagemRepository,
+                null,
                 null,
                 null,
                 null,
