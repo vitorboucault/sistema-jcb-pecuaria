@@ -11,9 +11,9 @@ import java.util.UUID;
 public class Animal {
 
     private final UUID id;
-    private final String brincoRgd;
-    private final LocalDate dataNascimento;
-    private final Sexo sexo;
+    private String brincoRgd;
+    private LocalDate dataNascimento;
+    private Sexo sexo;
     private Categoria categoriaAtual;
     private Status status;
     private UUID maeId;
@@ -103,6 +103,26 @@ public class Animal {
     public void registrarVenda() {
         this.status = Status.VENDIDO;
         this.loteId = null;
+    }
+
+    public void atualizarDadosCadastrais(String brincoRgd, LocalDate dataNascimento, Sexo sexo, Categoria categoria) {
+        if (brincoRgd == null || brincoRgd.isBlank()) {
+            throw new IllegalArgumentException("O brinco/RGD é obrigatório.");
+        }
+        if (dataNascimento == null) {
+            throw new IllegalArgumentException("A data de nascimento é obrigatória.");
+        }
+        if (sexo == null) {
+            throw new IllegalArgumentException("O sexo é obrigatório.");
+        }
+        if (categoria == null) {
+            throw new IllegalArgumentException("A categoria é obrigatória.");
+        }
+
+        this.brincoRgd = brincoRgd;
+        this.dataNascimento = dataNascimento;
+        this.sexo = sexo;
+        this.categoriaAtual = categoria;
     }
 
     public UUID getId() { return id; }

@@ -31,4 +31,9 @@ public class DiagnosticoGestacaoRepositoryImpl implements DiagnosticoGestacaoRep
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public boolean existePorAnimalId(UUID animalId) {
+        return springData.existsByAnimalId(animalId);
+    }
 }

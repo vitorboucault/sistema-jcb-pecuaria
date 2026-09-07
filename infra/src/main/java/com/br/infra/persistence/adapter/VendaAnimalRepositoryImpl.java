@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Service
 public class VendaAnimalRepositoryImpl implements VendaAnimalRepository {
@@ -31,5 +32,10 @@ public class VendaAnimalRepositoryImpl implements VendaAnimalRepository {
                 .map(mapper::toDomain)
                 .map(VendaAnimal::calcularReceitaTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    @Override
+    public boolean existePorAnimalId(UUID animalId) {
+        return springData.existsByAnimalId(animalId);
     }
 }

@@ -16,5 +16,6 @@ public interface DespesaRepository {
     List<Despesa> buscarPorPeriodo(LocalDate inicio, LocalDate fim);
     BigDecimal somarDespesasNoPeriodo(LocalDate inicio, LocalDate fim);
     Pagina<Despesa> buscarTodosPaginado(int pagina, int tamanho);
+    boolean existePorAnimalId(UUID animalId);
 
 }

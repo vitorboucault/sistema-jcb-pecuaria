@@ -52,6 +52,11 @@ public class PesagemRepositoryImpl implements PesagemRepository {
     }
 
     @Override
+    public boolean existePorAnimalId(UUID animalId) {
+        return springDataRepository.existsByAnimalId(animalId);
+    }
+
+    @Override
     public Double calcularGanhoPesoTotalNoPeriodo(LocalDate inicioSafra, LocalDate fimSafra) {
         return springDataRepository.calcularGanhoPesoTotalNoPeriodo(inicioSafra, fimSafra);
     }

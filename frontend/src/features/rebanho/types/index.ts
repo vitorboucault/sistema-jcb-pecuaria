@@ -38,6 +38,11 @@ export interface Pagina<T> {
     totalPaginas: number;
 }
 
+export interface ResumoRebanho {
+    total: number;
+    porCategoria: Record<CategoriaAnimal, number>;
+}
+
 export interface CadastrarAnimalInput {
     origem: 'COMPRA' | 'NASCIMENTO';
     brincoRgd: string;
@@ -50,4 +55,11 @@ export interface CadastrarAnimalInput {
     valorCompra?: number;
     maeId?: string;
     loteId: string;
+}
+
+export interface AtualizarAnimalInput {
+    brincoRgd: string;
+    dataNascimento: string;
+    sexo: 'MACHO' | 'FEMEA';
+    categoria: CategoriaAnimal;
 }

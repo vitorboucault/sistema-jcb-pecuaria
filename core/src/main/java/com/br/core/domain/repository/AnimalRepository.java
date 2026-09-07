@@ -19,4 +19,5 @@ public interface AnimalRepository {
     List<Animal> buscarPorLote(UUID loteId);
     long contarAnimaisAtivos();
     Map<Categoria, Long> contarAtivosPorCategoria();
+    void excluirPorId(UUID id);
 }

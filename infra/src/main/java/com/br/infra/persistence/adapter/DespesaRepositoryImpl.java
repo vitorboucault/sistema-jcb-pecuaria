@@ -63,4 +63,9 @@ public class DespesaRepositoryImpl implements DespesaRepository {
         return new Pagina<>(despesas, pageResult.getNumber(), pageResult.getSize(), pageResult.getTotalElements(), pageResult.getTotalPages());
     }
 
+    @Override
+    public boolean existePorAnimalId(UUID animalId) {
+        return springDataRepository.existsByTipoAndCentroCustoIdAndTipoCentroCusto("DESPESA", animalId, "ANIMAL");
+    }
+
 }

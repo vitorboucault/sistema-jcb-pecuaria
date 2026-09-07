@@ -11,4 +11,5 @@ import java.util.UUID;
 @Repository
 public interface SpringDataDiagnosticoRepository extends JpaRepository<DiagnosticoGestacaoEntity, UUID> {
     List<DiagnosticoGestacaoEntity> findByEstacaoMontaId(UUID estacaoMontaId);
+    boolean existsByAnimalId(UUID animalId);
 }

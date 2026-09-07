@@ -1,13 +1,17 @@
 package com.br.application.rest;
 
+import com.br.application.dto.AtualizarAnimalRequest;
 import com.br.application.dto.AnimalResumoDTO;
 import com.br.application.dto.AnimalInputDTO;
 import com.br.core.domain.enums.Categoria;
+import com.br.usecase.dto.AtualizarAnimalCommand;
 import com.br.usecase.dto.RegistrarCompraAnimalCommand;
 import com.br.usecase.dto.RegistrarMorteAnimalCommand;
 import com.br.usecase.dto.RegistrarNascimentoCommand;
 import com.br.usecase.dto.RegistrarPesagemCommand;
 import com.br.usecase.dto.ResumoRebanhoDTO;
+import com.br.usecase.manejo.AtualizarAnimalUseCase;
+import com.br.usecase.manejo.ExcluirAnimalUseCase;
 import com.br.usecase.manejo.ObterResumoRebanhoUseCase;
 import com.br.usecase.manejo.RegistrarCompraAnimalUseCase;
 import com.br.usecase.manejo.RegistrarNascimentoUseCase;
@@ -42,6 +46,8 @@ public class AnimalController {
     private final RegistrarMorteAnimalUseCase registrarMorteAnimalUseCase;
     private final RegistrarCompraAnimalUseCase registrarCompraAnimalUseCase;
     private final ObterResumoRebanhoUseCase obterResumoRebanhoUseCase;
+    private final AtualizarAnimalUseCase atualizarAnimalUseCase;
+    private final ExcluirAnimalUseCase excluirAnimalUseCase;
 
     public AnimalController(
             RegistrarNascimentoUseCase registrarNascimentoUseCase,
@@ -52,7 +58,9 @@ public class AnimalController {
             MovimentarAnimalUseCase movimentarAnimalUseCase,
             RegistrarMorteAnimalUseCase registrarMorteAnimalUseCase,
             RegistrarCompraAnimalUseCase registrarCompraAnimalUseCase,
-            ObterResumoRebanhoUseCase obterResumoRebanhoUseCase) {
+            ObterResumoRebanhoUseCase obterResumoRebanhoUseCase,
+            AtualizarAnimalUseCase atualizarAnimalUseCase,
+            ExcluirAnimalUseCase excluirAnimalUseCase) {
         this.registrarNascimentoUseCase = registrarNascimentoUseCase;
         this.registrarPesagemUseCase = registrarPesagemUseCase;
         this.animalRepository = animalRepository;
@@ -62,6 +70,8 @@ public class AnimalController {
         this.registrarMorteAnimalUseCase = registrarMorteAnimalUseCase;
         this.registrarCompraAnimalUseCase = registrarCompraAnimalUseCase;
         this.obterResumoRebanhoUseCase = obterResumoRebanhoUseCase;
+        this.atualizarAnimalUseCase = atualizarAnimalUseCase;
+        this.excluirAnimalUseCase = excluirAnimalUseCase;
     }
 
     @PostMapping
@@ -127,6 +137,18 @@ public class AnimalController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Void> atualizar(@PathVariable UUID id, @Valid @RequestBody AtualizarAnimalRequest request) {
+        atualizarAnimalUseCase.executar(new AtualizarAnimalCommand(
+                id,
+                request.brincoRgd(),
+                request.dataNascimento(),
+                request.sexo(),
+                request.categoria()
+        ));
+        return ResponseEntity.noContent().build();
+    }
+
     private AnimalResumoDTO paraResumo(Animal animal) {
         String nomeLote = animal.getLoteId() == null ? null : loteRepository.buscarPorId(animal.getLoteId())
                 .map(lote -> lote.getNome())
@@ -160,6 +182,12 @@ public class AnimalController {
     @DeleteMapping("/{id}/baixa-morte")
     public ResponseEntity<Void> registrarMorte(@PathVariable UUID id, @RequestParam LocalDate dataMorte) {
         registrarMorteAnimalUseCase.executar(new RegistrarMorteAnimalCommand(id, dataMorte));
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> excluir(@PathVariable UUID id) {
+        excluirAnimalUseCase.executar(id);
         return ResponseEntity.noContent().build();
     }
 

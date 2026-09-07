@@ -15,6 +15,7 @@ import java.util.UUID;
 public interface SpringDataPesagemRepository extends JpaRepository<PesagemEntity, UUID> {
     List<PesagemEntity> findByAnimalIdOrderByDataPesagemAsc(UUID animalId);
     Optional<PesagemEntity> findFirstByAnimalIdOrderByDataPesagemDesc(UUID animalId);
+    boolean existsByAnimalId(UUID animalId);
 
     @Query("SELECT COALESCE(SUM(p.peso), 0.0) FROM PesagemEntity p WHERE p.dataPesagem BETWEEN :inicio AND :fim")
     Double calcularGanhoPesoTotalNoPeriodo(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);

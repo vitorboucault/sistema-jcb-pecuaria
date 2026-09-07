@@ -13,4 +13,6 @@ import java.util.UUID;
 public interface SpringDataEventoReprodutivoRepository extends JpaRepository<EventoReprodutivoEntity, UUID> {
     @Query("SELECT COUNT(DISTINCT e.animalId) FROM EventoReprodutivoEntity e WHERE e.estacaoMontaId = :estacaoMontaId")
     long countDistinctAnimalIdByEstacaoMontaId(@Param("estacaoMontaId") UUID estacaoMontaId);
+
+    boolean existsByAnimalIdOrTouroId(UUID animalId, UUID touroId);
 }

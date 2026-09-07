@@ -1,29 +1,41 @@
 import { useEffect, useState, useCallback } from 'react';
 import { isAxiosError } from 'axios';
 import { rebanhoService } from '../api/rebanhoService';
-import type { Animal, CadastrarAnimalInput, Lote } from '../types';
+import type { Animal, AtualizarAnimalInput, CadastrarAnimalInput, CategoriaAnimal, Lote, ResumoRebanho } from '../types';
 import { AnimalModalForm } from '../components/AnimalModalForm';
-import { Users, Plus, Tag, AlertCircle } from 'lucide-react';
+import { Users, Plus, Tag, AlertCircle, Activity, Pencil, Skull, Trash2, X, Save } from 'lucide-react';
+
+const categoriasResumo: CategoriaAnimal[] = ['BEZERRO', 'BEZERRA', 'GARROTE', 'NOVILHA', 'BOI', 'VACA', 'TOURO'];
 
 export const RebanhoPage = () => {
     const [animais, setAnimais] = useState<Animal[]>([]);
     const [lotes, setLotes] = useState<Lote[]>([]);
+    const [resumo, setResumo] = useState<ResumoRebanho | null>(null);
     const [loading, setLoading] = useState(true);
     const [erroBanco, setErroBanco] = useState<string | null>(null);
     const [filtroCategoria, setFiltroCategoria] = useState<string>('TODOS');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [animalEmEdicao, setAnimalEmEdicao] = useState<Animal | null>(null);
+    const [formEdicao, setFormEdicao] = useState<AtualizarAnimalInput>({
+        brincoRgd: '',
+        dataNascimento: '',
+        sexo: 'MACHO',
+        categoria: 'BEZERRO',
+    });
 
     const carregarDados = useCallback(async () => {
         setLoading(true);
         try {
-            const [dadosAnimais, dadosLotes] = await Promise.all([
+            const [dadosAnimais, dadosLotes, dadosResumo] = await Promise.all([
                 rebanhoService.listarAnimais(),
                 rebanhoService.listarLotes(),
+                rebanhoService.obterResumo(),
             ]);
 
             // BLINDAGEM CRUCIAL: Assegura que o estado seja sempre um array, mesmo se a API falhar
             setAnimais(Array.isArray(dadosAnimais) ? dadosAnimais : []);
             setLotes(Array.isArray(dadosLotes) ? dadosLotes : []);
+            setResumo(dadosResumo ?? null);
             setErroBanco(null);
         } catch (err: unknown) {
             console.error('Falha ao comunicar com o backend:', err);
@@ -31,6 +43,7 @@ export const RebanhoPage = () => {
             setErroBanco(mensagem || 'Erro ao carregar dados do banco PostgreSQL.');
             setAnimais([]);
             setLotes([]);
+            setResumo(null);
         } finally {
             setLoading(false);
         }
@@ -46,6 +59,58 @@ export const RebanhoPage = () => {
         await carregarDados();
     };
 
+    const abrirEdicao = (animal: Animal) => {
+        setAnimalEmEdicao(animal);
+        setFormEdicao({
+            brincoRgd: animal.brincoRgd,
+            dataNascimento: animal.dataNascimento,
+            sexo: animal.sexo,
+            categoria: animal.categoria,
+        });
+    };
+
+    const salvarEdicao = async () => {
+        if (!animalEmEdicao) return;
+
+        try {
+            await rebanhoService.atualizarAnimal(animalEmEdicao.id, formEdicao);
+            setAnimalEmEdicao(null);
+            await carregarDados();
+        } catch (err: unknown) {
+            console.error(err);
+            const mensagem = isAxiosError<{ mensagem?: string }>(err) ? err.response?.data?.mensagem : undefined;
+            setErroBanco(mensagem || 'Erro ao atualizar animal.');
+        }
+    };
+
+    const registrarMorte = async (animal: Animal) => {
+        const dataMorte = window.prompt('Informe a data da morte (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+        if (!dataMorte) return;
+        if (!window.confirm(`Confirmar baixa por morte do animal ${animal.brincoRgd}?`)) return;
+
+        try {
+            await rebanhoService.registrarMorte(animal.id, dataMorte);
+            await carregarDados();
+        } catch (err: unknown) {
+            console.error(err);
+            const mensagem = isAxiosError<{ mensagem?: string }>(err) ? err.response?.data?.mensagem : undefined;
+            setErroBanco(mensagem || 'Erro ao registrar morte do animal.');
+        }
+    };
+
+    const excluirAnimal = async (animal: Animal) => {
+        if (!window.confirm(`Excluir fisicamente o animal ${animal.brincoRgd}? Use apenas para cadastro feito por engano.`)) return;
+
+        try {
+            await rebanhoService.excluirAnimal(animal.id);
+            await carregarDados();
+        } catch (err: unknown) {
+            console.error(err);
+            const mensagem = isAxiosError<{ mensagem?: string }>(err) ? err.response?.data?.mensagem : undefined;
+            setErroBanco(mensagem || 'Erro ao excluir animal. Verifique se ele possui histórico ou vínculos.');
+        }
+    };
+
     // Garante segurança caso animais não seja um array
     const listaAnimaisSegura = Array.isArray(animais) ? animais : [];
     const animaisFiltrados = filtroCategoria === 'TODOS'
@@ -55,7 +120,7 @@ export const RebanhoPage = () => {
     // Garante segurança caso lotes não seja um array
     const listaLotesSegura = Array.isArray(lotes) ? lotes : [];
 
-    if (loading && listaAnimaisSegura.length === 0 && listaLotesSegura.length === 0) {
+    if (loading && listaAnimaisSegura.length === 0 && listaLotesSegura.length === 0 && !resumo) {
         return (
             <div className="flex h-96 items-center justify-center text-emerald-400 font-mono text-sm tracking-wider">
                 SINCRONIZANDO CURRAL E DADOS DO SERVIDOR...
@@ -91,32 +156,28 @@ export const RebanhoPage = () => {
                 </div>
             )}
 
-            {/* Cards de Resumo de Lotes */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {listaLotesSegura.length === 0 ? (
-                    <div className="col-span-3 p-6 bg-stone-900/40 border border-stone-800 rounded-2xl text-center text-stone-500 font-mono text-xs">
-                        Nenhum lote cadastrado ou endpoint `/api/v1/lotes` retornou vazio.
+            {/* Resumo do Rebanho */}
+            <div className="grid grid-cols-2 lg:grid-cols-8 gap-4">
+                <div className="col-span-2 lg:col-span-1 border border-emerald-700/60 bg-emerald-950/30 rounded-xl p-5 shadow-xl">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-bold uppercase tracking-widest text-emerald-300">Rebanho Total</span>
+                        <Activity className="w-4 h-4 text-emerald-400" />
                     </div>
-                ) : (
-                    listaLotesSegura.map((lote) => (
-                        <div key={lote.id} className="border border-stone-800 bg-stone-900/80 rounded-2xl p-6 shadow-xl hover:border-emerald-500/50 transition-all">
-                            <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">
-                  {lote?.fase || 'SEM FASE'}
-                </span>
-                                <span className="px-2.5 py-0.5 bg-stone-950 border border-stone-800 rounded-full text-xs font-mono text-stone-300">
-                  {lote?.quantidadeAnimais ?? 0} cabeças
-                </span>
-                            </div>
-                            <h3 className="text-lg font-bold text-white mb-1">{lote?.nome || 'Lote sem nome'}</h3>
-                            <p className="text-xs text-stone-400 mb-4">Lote em fase de {lote?.fase?.toLowerCase() || 'manejo'}.</p>
-                            <div className="flex items-center justify-between pt-3 border-t border-stone-800 text-xs font-mono">
-                                <span className="text-stone-400">Peso Médio Atual:</span>
-                                <span className="text-emerald-400 font-bold">{lote?.pesoMedio ?? 0} kg</span>
-                            </div>
+                    <div className="text-3xl font-black text-white font-mono">{resumo?.total ?? 0}</div>
+                    <div className="text-xs text-stone-400 mt-1">Animais ativos</div>
+                </div>
+
+                {categoriasResumo.map((categoria) => (
+                    <div key={categoria} className="border border-stone-800 bg-stone-900/80 rounded-xl p-5 shadow-xl hover:border-emerald-500/50 transition-all">
+                        <div className="text-[11px] font-bold uppercase tracking-widest text-stone-400 mb-3">
+                            {categoria}
                         </div>
-                    ))
-                )}
+                        <div className="text-2xl font-black text-white font-mono">
+                            {resumo?.porCategoria?.[categoria] ?? 0}
+                        </div>
+                        <div className="text-xs text-stone-500 mt-1">Ativos</div>
+                    </div>
+                ))}
             </div>
 
             {/* Tabela de Animais */}
@@ -152,12 +213,13 @@ export const RebanhoPage = () => {
                             <th className="px-4 py-3">Lote Atual</th>
                             <th className="px-4 py-3">Última Pesagem</th>
                             <th className="px-4 py-3">Status</th>
+                            <th className="px-4 py-3 text-right">Ações</th>
                         </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-800 text-stone-300">
                         {animaisFiltrados.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="text-center py-8 text-stone-500 font-mono">
+                                <td colSpan={7} className="text-center py-8 text-stone-500 font-mono">
                                     Nenhum animal cadastrado ou endpoint `/api/v1/animais` indisponível.
                                 </td>
                             </tr>
@@ -175,9 +237,45 @@ export const RebanhoPage = () => {
                                         {animal?.pesoAtual == null ? 'Sem pesagem' : `${animal.pesoAtual} kg`}
                                     </td>
                                     <td className="px-4 py-3.5">
-                      <span className="px-2.5 py-1 bg-emerald-950/60 border border-emerald-800 text-emerald-400 rounded-full font-mono text-[10px]">
+                      <span className={`px-2.5 py-1 rounded-full font-mono text-[10px] border ${
+                          animal?.status === 'MORTO'
+                              ? 'bg-stone-950 border-stone-700 text-stone-400'
+                              : 'bg-emerald-950/60 border-emerald-800 text-emerald-400'
+                      }`}>
                         {animal?.status || 'ATIVO'}
                       </span>
+                                    </td>
+                                    <td className="px-4 py-3.5">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => abrirEdicao(animal)}
+                                                title="Editar"
+                                                className="p-2 bg-stone-950 border border-stone-800 text-stone-300 hover:text-white hover:border-emerald-600 rounded-lg transition-colors cursor-pointer"
+                                            >
+                                                <Pencil className="w-3.5 h-3.5" />
+                                            </button>
+                                            {animal.status === 'ATIVO' && (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => registrarMorte(animal)}
+                                                        title="Morte"
+                                                        className="p-2 bg-stone-950 border border-stone-800 text-amber-300 hover:border-amber-600 rounded-lg transition-colors cursor-pointer"
+                                                    >
+                                                        <Skull className="w-3.5 h-3.5" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => excluirAnimal(animal)}
+                                                        title="Excluir"
+                                                        className="p-2 bg-stone-950 border border-stone-800 text-red-300 hover:border-red-600 rounded-lg transition-colors cursor-pointer"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))
@@ -196,6 +294,97 @@ export const RebanhoPage = () => {
                 onSuccess={carregarDados}
                 onCadastrar={handleCadastrarAnimal}
             />
+
+            {animalEmEdicao && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="bg-stone-900 border border-stone-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+                        <div className="flex items-center justify-between pb-4 border-b border-stone-800 mb-6">
+                            <h2 className="text-lg font-black text-white flex items-center gap-2">
+                                <Pencil className="w-5 h-5 text-emerald-500" />
+                                EDITAR ANIMAL
+                            </h2>
+                            <button onClick={() => setAnimalEmEdicao(null)} className="text-stone-400 hover:text-white transition-colors cursor-pointer">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
+                                        Brinco / RGD *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formEdicao.brincoRgd}
+                                        onChange={(e) => setFormEdicao((atual) => ({ ...atual, brincoRgd: e.target.value }))}
+                                        className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 font-mono"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
+                                        Data de Nascimento *
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={formEdicao.dataNascimento}
+                                        onChange={(e) => setFormEdicao((atual) => ({ ...atual, dataNascimento: e.target.value }))}
+                                        className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 font-mono"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
+                                        Sexo *
+                                    </label>
+                                    <select
+                                        value={formEdicao.sexo}
+                                        onChange={(e) => setFormEdicao((atual) => ({ ...atual, sexo: e.target.value as 'MACHO' | 'FEMEA' }))}
+                                        className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                                    >
+                                        <option value="MACHO">Macho</option>
+                                        <option value="FEMEA">Fêmea</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
+                                        Categoria *
+                                    </label>
+                                    <select
+                                        value={formEdicao.categoria}
+                                        onChange={(e) => setFormEdicao((atual) => ({ ...atual, categoria: e.target.value as CategoriaAnimal }))}
+                                        className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                                    >
+                                        {categoriasResumo.map((categoria) => (
+                                            <option key={categoria} value={categoria}>{categoria}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 flex items-center justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setAnimalEmEdicao(null)}
+                                    className="px-4 py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold text-xs uppercase rounded-xl transition-colors cursor-pointer"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={salvarEdicao}
+                                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-stone-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-emerald-950/30 flex items-center gap-2"
+                                >
+                                    <Save className="w-4 h-4" />
+                                    Salvar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -6,4 +6,5 @@ import java.util.UUID;
 public interface EventoReprodutivoRepository {
     void salvar(EventoReprodutivo evento);
     long contarFemeasUnicasNaEstacao(UUID estacaoMontaId);
+    boolean existePorAnimalId(UUID animalId);
 }

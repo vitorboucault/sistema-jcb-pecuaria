@@ -29,4 +29,9 @@ public class EventoReprodutivoRepositoryImpl implements EventoReprodutivoReposit
         return springData.countDistinctAnimalIdByEstacaoMontaId(estacaoMontaId);
     }
 
+    @Override
+    public boolean existePorAnimalId(UUID animalId) {
+        return springData.existsByAnimalIdOrTouroId(animalId, animalId);
+    }
+
 }

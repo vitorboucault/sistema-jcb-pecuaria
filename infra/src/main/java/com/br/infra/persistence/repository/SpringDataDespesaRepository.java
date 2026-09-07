@@ -16,6 +16,7 @@ import java.util.UUID;
 public interface SpringDataDespesaRepository extends JpaRepository<DespesaEntity, UUID> {
     List<DespesaEntity> findByTipoAndCentroCustoId(String tipo, UUID centroCustoId);
     List<DespesaEntity> findByTipoAndDataTransacaoBetween(String tipo, LocalDate inicio, LocalDate fim);
+    boolean existsByTipoAndCentroCustoIdAndTipoCentroCusto(String tipo, UUID centroCustoId, String tipoCentroCusto);
 
     @Query("SELECT COALESCE(SUM(d.valor), 0.0) FROM DespesaEntity d WHERE d.dataTransacao BETWEEN :inicio AND :fim")
     BigDecimal somarDespesasNoPeriodo(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);

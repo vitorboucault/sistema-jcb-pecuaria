@@ -12,4 +12,5 @@ import java.util.UUID;
 @Repository
 public interface SpringDataVendaAnimalRepository extends JpaRepository<VendaAnimalEntity, UUID> {
     List<VendaAnimalEntity> findByDataVendaBetween(LocalDate inicio, LocalDate fim);
+    boolean existsByAnimalId(UUID animalId);
 }

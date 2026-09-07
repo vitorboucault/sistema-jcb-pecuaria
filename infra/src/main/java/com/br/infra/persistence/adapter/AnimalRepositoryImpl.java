@@ -82,6 +82,11 @@ public class AnimalRepositoryImpl implements AnimalRepository {
     }
 
     @Override
+    public void excluirPorId(UUID id) {
+        springDataRepository.deleteById(id);
+    }
+
+    @Override
     public Pagina<Animal> buscarTodosPaginado(int pagina, int tamanho) {
         PageRequest pageRequest = PageRequest.of(pagina, tamanho);
         Page<AnimalEntity> pageResult = springDataRepository.buscarAnimaisVisiveis(LocalDate.now().minusMonths(12), pageRequest);
