@@ -162,6 +162,23 @@ class ExcluirAnimalUseCaseTest {
     }
 
     @Test
+    @DisplayName("Animal vendido nao pode ser excluido pela interface normal")
+    void animalVendidoNaoPodeSerExcluido() {
+        UUID animalId = UUID.randomUUID();
+        Animal animal = new Animal(animalId, "VENDIDO-01", LocalDate.now().minusYears(1), Sexo.MACHO,
+                Categoria.BOI, Status.VENDIDO, null, null);
+
+        when(animalRepository.buscarPorId(animalId)).thenReturn(Optional.of(animal));
+
+        assertThatThrownBy(() -> useCase.executar(animalId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Animal vendido nao pode ser excluido");
+
+        verify(animalRepository, never()).excluirPorId(animalId);
+        verify(pesagemRepository, never()).buscarHistoricoPorAnimal(animalId);
+    }
+
+    @Test
     @DisplayName("Venda, reproducao ou morte bloqueiam exclusao")
     void vendaReproducaoOuMorteBloqueiamExclusao() {
         UUID animalComVendaId = UUID.randomUUID();

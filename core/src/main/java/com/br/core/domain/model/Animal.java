@@ -101,7 +101,27 @@ public class Animal {
     }
 
     public void registrarVenda() {
+        if (this.status != Status.ATIVO) {
+            throw new IllegalStateException("Somente animais ativos podem ser vendidos.");
+        }
         this.status = Status.VENDIDO;
+        this.loteId = null;
+    }
+
+    public void reverterMorte() {
+        if (this.status != Status.MORTO) {
+            throw new IllegalStateException("Somente animais mortos podem ter a morte revertida.");
+        }
+        this.status = Status.ATIVO;
+        this.dataMorte = null;
+        this.loteId = null;
+    }
+
+    public void reverterVenda() {
+        if (this.status != Status.VENDIDO) {
+            throw new IllegalStateException("Somente animais vendidos podem ter a venda revertida.");
+        }
+        this.status = Status.ATIVO;
         this.loteId = null;
     }
 
@@ -111,6 +131,9 @@ public class Animal {
         }
         if (dataNascimento == null) {
             throw new IllegalArgumentException("A data de nascimento é obrigatória.");
+        }
+        if (dataNascimento.isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("O bezerro nao pode nascer no futuro.");
         }
         if (sexo == null) {
             throw new IllegalArgumentException("O sexo é obrigatório.");
@@ -139,19 +162,7 @@ public class Animal {
         this.categoriaAtual = categoriaAtual;
     }
 
-    public void setStatus(Status status) {
-        this.status = status;
-    }
-
     public void setMaeId(UUID maeId) {
         this.maeId = maeId;
-    }
-
-    public void setLoteId(UUID loteId) {
-        this.loteId = loteId;
-    }
-
-    public void setDataMorte(LocalDate dataMorte) {
-        this.dataMorte = dataMorte;
     }
 }

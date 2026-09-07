@@ -95,4 +95,38 @@ class RegistrarPesagemUseCaseTest {
 
         verify(pesagemRepository, never()).salvar(any());
     }
+
+    @Test
+    @DisplayName("Não deve registrar pesagem para animal morto")
+    void deveBarrarPesagemDeAnimalMorto() {
+        UUID animalId = UUID.randomUUID();
+        Animal animal = new Animal(animalId, "MORTO-PESO", LocalDate.now().minusYears(2), Sexo.MACHO,
+                Categoria.BOI, Status.MORTO, null, null, LocalDate.now().minusDays(1));
+        when(animalRepository.buscarPorId(animalId)).thenReturn(Optional.of(animal));
+
+        assertThatThrownBy(() -> useCase.executar(new RegistrarPesagemCommand(
+                animalId, LocalDate.now(), 400.0, false)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Somente animais ativos podem receber pesagem.");
+
+        verify(pesagemRepository, never()).buscarUltimaPesagemDoAnimal(animalId);
+        verify(pesagemRepository, never()).salvar(any());
+    }
+
+    @Test
+    @DisplayName("Não deve registrar pesagem para animal vendido")
+    void deveBarrarPesagemDeAnimalVendido() {
+        UUID animalId = UUID.randomUUID();
+        Animal animal = new Animal(animalId, "VENDIDO-PESO", LocalDate.now().minusYears(2), Sexo.MACHO,
+                Categoria.BOI, Status.VENDIDO, null, null);
+        when(animalRepository.buscarPorId(animalId)).thenReturn(Optional.of(animal));
+
+        assertThatThrownBy(() -> useCase.executar(new RegistrarPesagemCommand(
+                animalId, LocalDate.now(), 400.0, false)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Somente animais ativos podem receber pesagem.");
+
+        verify(pesagemRepository, never()).buscarUltimaPesagemDoAnimal(animalId);
+        verify(pesagemRepository, never()).salvar(any());
+    }
 }

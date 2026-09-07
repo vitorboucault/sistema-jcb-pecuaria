@@ -2,6 +2,8 @@ package com.br.usecase.manejo;
 
 import com.br.usecase.dto.RegistrarPesagemCommand;
 import com.br.usecase.dto.RegistrarPesagemResult;
+import com.br.core.domain.enums.Status;
+import com.br.core.domain.model.Animal;
 import com.br.core.domain.model.Pesagem;
 import com.br.core.domain.repository.PesagemRepository;
 import com.br.core.domain.service.CalculadoraGmdService;
@@ -26,8 +28,11 @@ public class RegistrarPesagemUseCase {
     @Transactional
     public RegistrarPesagemResult executar(RegistrarPesagemCommand command) {
 
-        if (animalRepository.buscarPorId(command.animalId()).isEmpty()) {
-            throw new IllegalArgumentException("Erro: Animal nao encontrado no sistema.");
+        Animal animal = animalRepository.buscarPorId(command.animalId())
+                .orElseThrow(() -> new IllegalArgumentException("Erro: Animal nao encontrado no sistema."));
+
+        if (animal.getStatus() != Status.ATIVO) {
+            throw new IllegalStateException("Somente animais ativos podem receber pesagem.");
         }
 
         Optional<Pesagem> ultimaPesagem = pesagemRepository.buscarUltimaPesagemDoAnimal(command.animalId());

@@ -48,8 +48,11 @@ public class ExcluirAnimalUseCase {
         Animal animal = animalRepository.buscarPorId(animalId)
                 .orElseThrow(() -> new IllegalArgumentException("Animal nao encontrado."));
 
-        if (animal.getStatus() == Status.MORTO) {
-            throw new IllegalStateException("Animal morto nao pode ser excluido pela interface normal.");
+        if (animal.getStatus() != Status.ATIVO) {
+            if (animal.getStatus() == Status.MORTO) {
+                throw new IllegalStateException("Animal morto nao pode ser excluido pela interface normal.");
+            }
+            throw new IllegalStateException("Animal vendido nao pode ser excluido pela interface normal.");
         }
 
         List<Pesagem> pesagens = pesagemRepository.buscarHistoricoPorAnimal(animalId);
