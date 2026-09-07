@@ -1,6 +1,7 @@
 package com.br.usecase.manejo;
 
 import com.br.core.domain.enums.Categoria;
+import com.br.core.domain.enums.OrigemPesagem;
 import com.br.core.domain.enums.Sexo;
 import com.br.core.domain.enums.Status;
 import com.br.core.domain.model.Animal;
@@ -62,6 +63,22 @@ class RegistrarPesagemUseCaseTest {
         assertThat(result.pesoKg()).isEqualTo(460.0);
         assertThat(result.gmd()).isEqualTo(1.0);
         verify(pesagemRepository, times(1)).salvar(any(Pesagem.class));
+        verify(pesagemRepository).salvar(argThat(pesagem -> pesagem.getOrigem() == OrigemPesagem.OPERACIONAL));
+    }
+
+    @Test
+    @DisplayName("Deve registrar pesagem do cadastro com origem inicial")
+    void deveRegistrarPesagemInicialComOrigemDeCadastro() {
+        UUID animalId = UUID.randomUUID();
+        Animal animal = new Animal(animalId, "CADASTRO-PESO", LocalDate.now().minusYears(1), Sexo.MACHO,
+                Categoria.BEZERRO, Status.ATIVO, null, null);
+
+        when(animalRepository.buscarPorId(animalId)).thenReturn(Optional.of(animal));
+
+        useCase.executar(new RegistrarPesagemCommand(
+                animalId, LocalDate.now(), 180.0, true, OrigemPesagem.CADASTRO_INICIAL));
+
+        verify(pesagemRepository).salvar(argThat(pesagem -> pesagem.getOrigem() == OrigemPesagem.CADASTRO_INICIAL));
     }
 
     @Test

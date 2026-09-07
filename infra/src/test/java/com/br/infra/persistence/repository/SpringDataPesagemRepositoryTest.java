@@ -2,6 +2,7 @@ package com.br.infra.persistence.repository;
 
 import com.br.infra.persistence.entity.AnimalEntity;
 import com.br.infra.persistence.entity.PesagemEntity;
+import com.br.core.domain.enums.OrigemPesagem;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,7 @@ class SpringDataPesagemRepositoryTest {
         assertThat(encontrada).isPresent();
         assertThat(encontrada.get().getPeso()).isEqualTo(450.5);
         assertThat(encontrada.get().getAnimalId()).isEqualTo(animalId);
+        assertThat(encontrada.get().getOrigem()).isEqualTo(OrigemPesagem.OPERACIONAL);
     }
 
     @Test

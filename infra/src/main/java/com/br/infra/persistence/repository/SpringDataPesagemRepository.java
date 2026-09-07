@@ -18,7 +18,7 @@ public interface SpringDataPesagemRepository extends JpaRepository<PesagemEntity
     boolean existsByAnimalId(UUID animalId);
 
     @Query(value = """
-            SELECT id, animal_id, data_pesagem, peso_kg
+            SELECT id, animal_id, data_pesagem, peso_kg, origem
             FROM (
                 SELECT p.*,
                        ROW_NUMBER() OVER (

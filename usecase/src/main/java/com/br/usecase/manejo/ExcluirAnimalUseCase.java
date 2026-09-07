@@ -1,6 +1,7 @@
 package com.br.usecase.manejo;
 
 import com.br.core.domain.enums.CategoriaDespesa;
+import com.br.core.domain.enums.OrigemPesagem;
 import com.br.core.domain.enums.Status;
 import com.br.core.domain.model.Animal;
 import com.br.core.domain.model.Despesa;
@@ -69,7 +70,7 @@ public class ExcluirAnimalUseCase {
     }
 
     private boolean possuiHistoricoOperacional(UUID animalId, List<Pesagem> pesagens, List<Despesa> despesas) {
-        return pesagens.size() > 1
+        return pesagens.stream().anyMatch(pesagem -> pesagem.getOrigem() == OrigemPesagem.OPERACIONAL)
                 || despesas.stream().anyMatch(this::naoEhDespesaInicialDeCompra)
                 || vendaAnimalRepository.existePorAnimalId(animalId)
                 || eventoReprodutivoRepository.existePorAnimalId(animalId)
@@ -81,7 +82,9 @@ public class ExcluirAnimalUseCase {
     }
 
     private void removerRegistrosIniciais(List<Pesagem> pesagens, List<Despesa> despesas) {
-        pesagens.forEach(pesagem -> pesagemRepository.excluirPorId(pesagem.getId()));
+        pesagens.stream()
+                .filter(pesagem -> pesagem.getOrigem() == OrigemPesagem.CADASTRO_INICIAL)
+                .forEach(pesagem -> pesagemRepository.excluirPorId(pesagem.getId()));
         despesas.forEach(despesa -> despesaRepository.excluirPorId(despesa.getId()));
     }
 }

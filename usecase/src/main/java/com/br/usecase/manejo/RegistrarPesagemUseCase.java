@@ -36,7 +36,8 @@ public class RegistrarPesagemUseCase {
                 command.animalId(),
                 command.dataPesagem(),
                 command.pesoKg(),
-                command.jejum()
+                command.jejum(),
+                command.origem()
         );
 
         double gmd = 0.0;

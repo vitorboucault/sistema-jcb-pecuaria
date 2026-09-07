@@ -1,5 +1,6 @@
 package com.br.application.rest;
 
+import com.br.core.domain.enums.OrigemPesagem;
 import com.br.application.dto.AtualizarAnimalRequest;
 import com.br.application.dto.AnimalResumoDTO;
 import com.br.application.dto.AnimalInputDTO;
@@ -194,7 +195,8 @@ public class AnimalController {
         if (dataPesagem == null) {
             throw new IllegalArgumentException("A data da pesagem inicial é obrigatória.");
         }
-        registrarPesagemUseCase.executar(new RegistrarPesagemCommand(animalId, dataPesagem, peso, true));
+        registrarPesagemUseCase.executar(new RegistrarPesagemCommand(
+                animalId, dataPesagem, peso, true, OrigemPesagem.CADASTRO_INICIAL));
     }
 
     @PutMapping("/{id}/movimentar")

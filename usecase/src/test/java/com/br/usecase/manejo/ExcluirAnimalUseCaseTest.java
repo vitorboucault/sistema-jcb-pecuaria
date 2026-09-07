@@ -2,6 +2,7 @@ package com.br.usecase.manejo;
 
 import com.br.core.domain.enums.Categoria;
 import com.br.core.domain.enums.CategoriaDespesa;
+import com.br.core.domain.enums.OrigemPesagem;
 import com.br.core.domain.enums.Sexo;
 import com.br.core.domain.enums.Status;
 import com.br.core.domain.enums.TipoDeCusto;
@@ -87,7 +88,7 @@ class ExcluirAnimalUseCaseTest {
     @DisplayName("Animal com pesagem inicial pode ser excluido")
     void animalComPesagemInicialPodeSerExcluido() {
         UUID animalId = UUID.randomUUID();
-        Pesagem pesagemInicial = new Pesagem(UUID.randomUUID(), animalId, LocalDate.now().minusDays(10), 180.0, false);
+        Pesagem pesagemInicial = new Pesagem(UUID.randomUUID(), animalId, LocalDate.now().minusDays(10), 180.0, false, OrigemPesagem.CADASTRO_INICIAL);
         Animal animal = new Animal(animalId, "PESO-INICIAL", LocalDate.now().minusYears(1), Sexo.MACHO, Categoria.BEZERRO, Status.ATIVO, null, null);
 
         when(animalRepository.buscarPorId(animalId)).thenReturn(Optional.of(animal));
@@ -130,8 +131,8 @@ class ExcluirAnimalUseCaseTest {
     void pesagemPosteriorBloqueiaExclusao() {
         UUID animalId = UUID.randomUUID();
         Animal animal = new Animal(animalId, "COM-HISTORICO", LocalDate.now().minusYears(1), Sexo.MACHO, Categoria.BEZERRO, Status.ATIVO, null, null);
-        Pesagem pesagemInicial = new Pesagem(UUID.randomUUID(), animalId, LocalDate.now().minusMonths(2), 180.0, false);
-        Pesagem pesagemPosterior = new Pesagem(UUID.randomUUID(), animalId, LocalDate.now().minusMonths(1), 210.0, false);
+        Pesagem pesagemInicial = new Pesagem(UUID.randomUUID(), animalId, LocalDate.now().minusMonths(2), 180.0, false, OrigemPesagem.CADASTRO_INICIAL);
+        Pesagem pesagemPosterior = new Pesagem(UUID.randomUUID(), animalId, LocalDate.now().minusMonths(1), 210.0, false, OrigemPesagem.OPERACIONAL);
 
         when(animalRepository.buscarPorId(animalId)).thenReturn(Optional.of(animal));
         when(pesagemRepository.buscarHistoricoPorAnimal(animalId)).thenReturn(List.of(pesagemInicial, pesagemPosterior));
@@ -202,7 +203,7 @@ class ExcluirAnimalUseCaseTest {
     @DisplayName("Exclusao remove somente registros iniciais relacionados")
     void exclusaoRemoveSomenteRegistrosIniciaisRelacionados() {
         UUID animalId = UUID.randomUUID();
-        Pesagem pesagemInicial = new Pesagem(UUID.randomUUID(), animalId, LocalDate.now().minusDays(10), 180.0, false);
+        Pesagem pesagemInicial = new Pesagem(UUID.randomUUID(), animalId, LocalDate.now().minusDays(10), 180.0, false, OrigemPesagem.CADASTRO_INICIAL);
         Despesa despesaCompra = new Despesa(
                 UUID.randomUUID(),
                 "Compra do animal INICIAL-01",

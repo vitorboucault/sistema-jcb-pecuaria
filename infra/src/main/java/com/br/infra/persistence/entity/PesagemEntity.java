@@ -1,5 +1,6 @@
 package com.br.infra.persistence.entity;
 
+import com.br.core.domain.enums.OrigemPesagem;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -26,13 +27,21 @@ public class PesagemEntity {
     @Column(name = "peso_kg", nullable = false)
     private Double peso;
 
+    @Column(name = "origem", nullable = false, length = 30)
+    private String origem;
+
     protected PesagemEntity() {}
 
     public PesagemEntity(UUID id, UUID animalId, LocalDate dataPesagem, Double pesoKg) {
+        this(id, animalId, dataPesagem, pesoKg, OrigemPesagem.OPERACIONAL);
+    }
+
+    public PesagemEntity(UUID id, UUID animalId, LocalDate dataPesagem, Double pesoKg, OrigemPesagem origem) {
         this.id = id;
         this.animalId = animalId;
         this.dataPesagem = dataPesagem;
         this.peso = pesoKg;
+        this.origem = origem.name();
     }
 
     public UUID getId() {return id;}
@@ -43,5 +52,9 @@ public class PesagemEntity {
 
     public Double getPeso() {
         return peso;
+    }
+
+    public OrigemPesagem getOrigem() {
+        return OrigemPesagem.valueOf(origem);
     }
 }
