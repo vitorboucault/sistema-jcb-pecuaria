@@ -12,5 +12,6 @@ public record AnimalResumoDTO(
         String nomeLote,
         Double pesoAtual,
         String status,
-        LocalDate dataNascimento
+        LocalDate dataNascimento,
+        LocalDate dataMorte
 ) {}

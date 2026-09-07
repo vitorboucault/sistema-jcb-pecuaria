@@ -19,6 +19,7 @@ export interface Animal {
     pesoAtual: number | null;
     status: StatusAnimal;
     dataNascimento: string;
+    dataMorte?: string | null;
 }
 
 export interface Lote {
@@ -45,6 +46,8 @@ export interface CadastrarAnimalInput {
     peso: number;
     dataNascimento: string;
     dataEntrada: string;
+    dataCompra?: string;
+    valorCompra?: number;
     maeId?: string;
     loteId: string;
 }

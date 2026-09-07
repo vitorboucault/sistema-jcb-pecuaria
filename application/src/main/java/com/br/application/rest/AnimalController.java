@@ -3,9 +3,13 @@ package com.br.application.rest;
 import com.br.application.dto.AnimalResumoDTO;
 import com.br.application.dto.AnimalInputDTO;
 import com.br.core.domain.enums.Categoria;
-import com.br.core.domain.enums.Status;
+import com.br.usecase.dto.RegistrarCompraAnimalCommand;
+import com.br.usecase.dto.RegistrarMorteAnimalCommand;
 import com.br.usecase.dto.RegistrarNascimentoCommand;
 import com.br.usecase.dto.RegistrarPesagemCommand;
+import com.br.usecase.dto.ResumoRebanhoDTO;
+import com.br.usecase.manejo.ObterResumoRebanhoUseCase;
+import com.br.usecase.manejo.RegistrarCompraAnimalUseCase;
 import com.br.usecase.manejo.RegistrarNascimentoUseCase;
 import com.br.core.domain.model.Animal;
 import com.br.core.domain.model.Pagina;
@@ -36,6 +40,8 @@ public class AnimalController {
     private final PesagemRepository pesagemRepository;
     private final MovimentarAnimalUseCase movimentarAnimalUseCase;
     private final RegistrarMorteAnimalUseCase registrarMorteAnimalUseCase;
+    private final RegistrarCompraAnimalUseCase registrarCompraAnimalUseCase;
+    private final ObterResumoRebanhoUseCase obterResumoRebanhoUseCase;
 
     public AnimalController(
             RegistrarNascimentoUseCase registrarNascimentoUseCase,
@@ -44,7 +50,9 @@ public class AnimalController {
             LoteRepository loteRepository,
             PesagemRepository pesagemRepository,
             MovimentarAnimalUseCase movimentarAnimalUseCase,
-            RegistrarMorteAnimalUseCase registrarMorteAnimalUseCase) {
+            RegistrarMorteAnimalUseCase registrarMorteAnimalUseCase,
+            RegistrarCompraAnimalUseCase registrarCompraAnimalUseCase,
+            ObterResumoRebanhoUseCase obterResumoRebanhoUseCase) {
         this.registrarNascimentoUseCase = registrarNascimentoUseCase;
         this.registrarPesagemUseCase = registrarPesagemUseCase;
         this.animalRepository = animalRepository;
@@ -52,6 +60,8 @@ public class AnimalController {
         this.pesagemRepository = pesagemRepository;
         this.movimentarAnimalUseCase = movimentarAnimalUseCase;
         this.registrarMorteAnimalUseCase = registrarMorteAnimalUseCase;
+        this.registrarCompraAnimalUseCase = registrarCompraAnimalUseCase;
+        this.obterResumoRebanhoUseCase = obterResumoRebanhoUseCase;
     }
 
     @PostMapping
@@ -76,18 +86,16 @@ public class AnimalController {
             animalId = registrarNascimentoUseCase.executar(command);
             registrarPesagemInicial(animalId, dto.peso(), dto.dataEntrada());
         } else {
-            Animal animalCompra = new Animal(
-                    UUID.randomUUID(),
+            RegistrarCompraAnimalCommand command = new RegistrarCompraAnimalCommand(
                     dto.brincoRgd(),
                     dto.dataNascimento(),
                     Sexo.valueOf(dto.sexo()),
                     Categoria.valueOf(dto.categoria()),
-                    Status.ATIVO,
-                    null,
-                    loteUuid
+                    loteUuid,
+                    dto.dataCompra(),
+                    dto.valorCompra()
             );
-            Animal salvo = animalRepository.salvar(animalCompra);
-            animalId = salvo.getId();
+            animalId = registrarCompraAnimalUseCase.executar(command);
 
             registrarPesagemInicial(animalId, dto.peso(), dto.dataEntrada());
         }
@@ -107,6 +115,11 @@ public class AnimalController {
                 resultado.totalElementos(), resultado.totalPaginas()));
     }
 
+    @GetMapping("/resumo")
+    public ResponseEntity<ResumoRebanhoDTO> obterResumo() {
+        return ResponseEntity.ok(obterResumoRebanhoUseCase.executar());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Animal> buscarPorId(@PathVariable UUID id) {
         return animalRepository.buscarPorId(id)
@@ -124,7 +137,8 @@ public class AnimalController {
 
         return new AnimalResumoDTO(
                 animal.getId(), animal.getBrincoRgd(), animal.getCategoriaAtual().name(), animal.getSexo().name(),
-                animal.getLoteId(), nomeLote, pesoAtual, animal.getStatus().name(), animal.getDataNascimento());
+                animal.getLoteId(), nomeLote, pesoAtual, animal.getStatus().name(), animal.getDataNascimento(),
+                animal.getDataMorte());
     }
 
     private void registrarPesagemInicial(UUID animalId, Double peso, LocalDate dataPesagem) {
@@ -144,8 +158,8 @@ public class AnimalController {
     }
 
     @DeleteMapping("/{id}/baixa-morte")
-    public ResponseEntity<Void> registrarMorte(@PathVariable UUID id) {
-        registrarMorteAnimalUseCase.executar(id);
+    public ResponseEntity<Void> registrarMorte(@PathVariable UUID id, @RequestParam LocalDate dataMorte) {
+        registrarMorteAnimalUseCase.executar(new RegistrarMorteAnimalCommand(id, dataMorte));
         return ResponseEntity.noContent().build();
     }
 

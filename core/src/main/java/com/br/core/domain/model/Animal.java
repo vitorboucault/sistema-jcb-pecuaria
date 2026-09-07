@@ -18,6 +18,7 @@ public class Animal {
     private Status status;
     private UUID maeId;
     private UUID loteId;
+    private LocalDate dataMorte;
 
     public Animal(String brincoRgd, LocalDate dataNascimento, Sexo sexo, UUID maeId, UUID loteInicial) {
         if (dataNascimento.isAfter(LocalDate.now())) {
@@ -34,6 +35,10 @@ public class Animal {
     }
 
     public Animal(UUID id, String brincoRgd, LocalDate dataNascimento, Sexo sexo, Categoria categoria, Status status, UUID maeId, UUID loteId) {
+        this(id, brincoRgd, dataNascimento, sexo, categoria, status, maeId, loteId, null);
+    }
+
+    public Animal(UUID id, String brincoRgd, LocalDate dataNascimento, Sexo sexo, Categoria categoria, Status status, UUID maeId, UUID loteId, LocalDate dataMorte) {
         this.id = id;
         this.brincoRgd = brincoRgd;
         this.dataNascimento = dataNascimento;
@@ -42,6 +47,7 @@ public class Animal {
         this.status = status;
         this.maeId = maeId;
         this.loteId = loteId;
+        this.dataMorte = dataMorte;
     }
 
     public void registrarDesmame() {
@@ -55,9 +61,19 @@ public class Animal {
         this.categoriaAtual = (this.sexo == Sexo.MACHO) ? Categoria.GARROTE : Categoria.NOVILHA;
     }
 
-    public void registrarMorte() {
+    public void registrarMorte(LocalDate dataMorte) {
+        if (dataMorte == null) {
+            throw new IllegalArgumentException("A data da morte é obrigatória.");
+        }
+        if (dataMorte.isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("A data da morte nao pode ser futura.");
+        }
+        if (this.status != Status.ATIVO) {
+            throw new IllegalStateException("Somente animais ativos podem receber baixa por morte.");
+        }
         this.status = Status.MORTO;
         this.loteId = null;
+        this.dataMorte = dataMorte;
     }
 
     public void transferirParaLote(UUID novoLoteId) {
@@ -97,6 +113,7 @@ public class Animal {
     public Status getStatus() { return status; }
     public UUID getMaeId() { return maeId; }
     public UUID getLoteId() { return loteId; }
+    public LocalDate getDataMorte() { return dataMorte; }
 
     public void setCategoriaAtual(Categoria categoriaAtual) {
         this.categoriaAtual = categoriaAtual;
@@ -112,5 +129,9 @@ public class Animal {
 
     public void setLoteId(UUID loteId) {
         this.loteId = loteId;
+    }
+
+    public void setDataMorte(LocalDate dataMorte) {
+        this.dataMorte = dataMorte;
     }
 }

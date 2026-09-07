@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -28,6 +29,11 @@ public record AnimalInputDTO(
         LocalDate dataNascimento,
 
         LocalDate dataEntrada,
+
+        LocalDate dataCompra,
+
+        @Positive(message = "O valor da compra deve ser maior que zero.")
+        BigDecimal valorCompra,
 
         UUID maeId,
 

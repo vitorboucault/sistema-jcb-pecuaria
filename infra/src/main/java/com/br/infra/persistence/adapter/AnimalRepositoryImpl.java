@@ -1,5 +1,6 @@
 package com.br.infra.persistence.adapter;
 
+import com.br.core.domain.enums.Categoria;
 import com.br.core.domain.model.Animal;
 import com.br.core.domain.model.Pagina;
 import com.br.infra.persistence.entity.AnimalEntity;
@@ -10,7 +11,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -67,9 +71,20 @@ public class AnimalRepositoryImpl implements AnimalRepository {
     }
 
     @Override
+    public Map<Categoria, Long> contarAtivosPorCategoria() {
+        Map<Categoria, Long> contagem = new EnumMap<>(Categoria.class);
+
+        springDataRepository.contarAtivosPorCategoria().forEach(item ->
+                contagem.put(Categoria.valueOf(item.getCategoria()), item.getTotal())
+        );
+
+        return contagem;
+    }
+
+    @Override
     public Pagina<Animal> buscarTodosPaginado(int pagina, int tamanho) {
         PageRequest pageRequest = PageRequest.of(pagina, tamanho);
-        Page<AnimalEntity> pageResult = springDataRepository.findByStatus("ATIVO", pageRequest);
+        Page<AnimalEntity> pageResult = springDataRepository.buscarAnimaisVisiveis(LocalDate.now().minusMonths(12), pageRequest);
 
         List<Animal> animais = pageResult.getContent().stream()
                 .map(mapper::toDomain)

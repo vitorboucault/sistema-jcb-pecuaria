@@ -33,9 +33,16 @@ public class AnimalEntity {
     @Column(nullable = false, length = 50)
     private String status;
 
+    @Column(name = "data_morte")
+    private LocalDate dataMorte;
+
     protected AnimalEntity() {}
 
     public AnimalEntity(UUID id, String brincoRgd, UUID loteAtual, LocalDate dataNascimento, String sexo, String categoriaAtual, String status, UUID maeId) {
+        this(id, brincoRgd, loteAtual, dataNascimento, sexo, categoriaAtual, status, maeId, null);
+    }
+
+    public AnimalEntity(UUID id, String brincoRgd, UUID loteAtual, LocalDate dataNascimento, String sexo, String categoriaAtual, String status, UUID maeId, LocalDate dataMorte) {
         this.id = id;
         this.brincoRgd = brincoRgd;
         this.loteAtual = loteAtual;
@@ -44,6 +51,7 @@ public class AnimalEntity {
         this.categoriaAtual = categoriaAtual;
         this.status = status;
         this.maeId = maeId;
+        this.dataMorte = dataMorte;
     }
 
     public UUID getId() { return id; }
@@ -56,6 +64,7 @@ public class AnimalEntity {
     public String getCategoriaAtual() { return categoriaAtual; }
     public String getStatus() { return status; }
     public UUID getMaeId() { return maeId; }
+    public LocalDate getDataMorte() { return dataMorte; }
 
 
 }

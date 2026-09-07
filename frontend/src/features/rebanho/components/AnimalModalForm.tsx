@@ -28,6 +28,8 @@ export const AnimalModalForm = ({
     const hoje = new Date().toISOString().split('T')[0];
     const [dataNascimento, setDataNascimento] = useState(hoje);
     const [dataEntrada, setDataEntrada] = useState(hoje);
+    const [dataCompra, setDataCompra] = useState(hoje);
+    const [valorCompra, setValorCompra] = useState('');
 
     const [loteId, setLoteId] = useState<string>(lotes[0]?.id || '');
     const [maeId, setMaeId] = useState('');
@@ -58,6 +60,8 @@ export const AnimalModalForm = ({
                 peso: Number(peso),
                 dataNascimento,
                 dataEntrada: origem === 'NASCIMENTO' ? dataNascimento : dataEntrada,
+                dataCompra: origem === 'COMPRA' ? dataCompra : undefined,
+                valorCompra: origem === 'COMPRA' && valorCompra ? Number(valorCompra) : undefined,
                 maeId: maeId || undefined,
                 loteId,
             });
@@ -237,6 +241,35 @@ export const AnimalModalForm = ({
                             </div>
                         )}
                     </div>
+
+                    {origem === 'COMPRA' && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
+                                    Data da Compra
+                                </label>
+                                <input
+                                    type="date"
+                                    value={dataCompra}
+                                    onChange={(e) => setDataCompra(e.target.value)}
+                                    className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 font-mono"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
+                                    Valor da Compra
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0.01"
+                                    step="0.01"
+                                    value={valorCompra}
+                                    onChange={(e) => setValorCompra(e.target.value)}
+                                    className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 font-mono"
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     {origem === 'NASCIMENTO' && (
                         <div>

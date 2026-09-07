@@ -18,7 +18,8 @@ public class AnimalMapper {
                 animal.getSexo().name(), // Grava o Enum como String
                 animal.getCategoriaAtual().name(),
                 animal.getStatus().name(),
-                animal.getMaeId()
+                animal.getMaeId(),
+                animal.getDataMorte()
         );
     }
 
@@ -31,7 +32,8 @@ public class AnimalMapper {
                 Categoria.valueOf(entity.getCategoriaAtual()),
                 Status.valueOf(entity.getStatus()),
                 entity.getMaeId(),
-                entity.getLoteAtual()
+                entity.getLoteAtual(),
+                entity.getDataMorte()
         );
     }
 }

@@ -7,5 +7,6 @@ public enum CategoriaDespesa {
     MAO_DE_OBRA,    // Salários, encargos, diárias
     MANUTENCAO,     // Trator, cercas, bebedouros
     IMPOSTOS,       // Funrural, GTA, ITR
+    COMPRA_ANIMAL,
     DIVERSOS
 }

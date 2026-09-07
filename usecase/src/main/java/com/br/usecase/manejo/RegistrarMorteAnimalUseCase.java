@@ -2,6 +2,7 @@ package com.br.usecase.manejo;
 
 import com.br.core.domain.model.Animal;
 import com.br.core.domain.repository.AnimalRepository;
+import com.br.usecase.dto.RegistrarMorteAnimalCommand;
 import jakarta.transaction.Transactional;
 import jakarta.inject.Named;
 
@@ -16,10 +17,10 @@ public class RegistrarMorteAnimalUseCase {
     }
 
     @Transactional
-    public void executar(UUID animalId) {
-        Animal animal = animalRepository.buscarPorId(animalId)
+    public void executar(RegistrarMorteAnimalCommand command) {
+        Animal animal = animalRepository.buscarPorId(command.animalId())
                 .orElseThrow(() -> new IllegalArgumentException("Animal nao encontrado."));
-        animal.registrarMorte();
+        animal.registrarMorte(command.dataMorte());
         animalRepository.salvar(animal);
     }
 }

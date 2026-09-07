@@ -1,9 +1,11 @@
 package com.br.core.domain.repository;
 
+import com.br.core.domain.enums.Categoria;
 import com.br.core.domain.model.Animal;
 import com.br.core.domain.model.Pagina;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,4 +18,5 @@ public interface AnimalRepository {
     Pagina<Animal> buscarTodosPaginado(int pagina, int tamanho);
     List<Animal> buscarPorLote(UUID loteId);
     long contarAnimaisAtivos();
+    Map<Categoria, Long> contarAtivosPorCategoria();
 }
