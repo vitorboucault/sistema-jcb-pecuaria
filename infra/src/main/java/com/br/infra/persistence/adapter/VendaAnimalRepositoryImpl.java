@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
+import java.util.List;
 
 @Service
 public class VendaAnimalRepositoryImpl implements VendaAnimalRepository {
@@ -37,5 +38,17 @@ public class VendaAnimalRepositoryImpl implements VendaAnimalRepository {
     @Override
     public boolean existePorAnimalId(UUID animalId) {
         return springData.existsByAnimalId(animalId);
+    }
+
+    @Override
+    public List<VendaAnimal> buscarPorAnimalId(UUID animalId) {
+        return springData.findByAnimalId(animalId).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public void excluirPorId(UUID vendaId) {
+        springData.deleteById(vendaId);
     }
 }

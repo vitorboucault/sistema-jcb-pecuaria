@@ -7,6 +7,7 @@ import com.br.core.domain.enums.Status;
 import com.br.core.domain.model.Animal;
 import com.br.core.domain.repository.AnimalRepository;
 import com.br.core.domain.repository.VendaAnimalRepository;
+import com.br.core.domain.model.VendaAnimal;
 import com.br.usecase.dto.RegistrarVendaCommand;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 class RegistrarVendaAnimalUseCaseTest {
@@ -52,11 +54,14 @@ class RegistrarVendaAnimalUseCaseTest {
 
         UUID vendaId = useCase.executar(command);
 
-        assertThat(vendaId).isNotNull();
+        ArgumentCaptor<VendaAnimal> vendaCaptor = ArgumentCaptor.forClass(VendaAnimal.class);
+        verify(vendaRepository).salvar(vendaCaptor.capture());
+
+        assertThat(vendaId).isEqualTo(vendaCaptor.getValue().getId());
+        assertThat(vendaId).isNotEqualTo(animalId);
         assertThat(boi.getStatus()).isEqualTo(Status.VENDIDO);
         assertThat(boi.getLoteId()).isNull();
 
-        verify(vendaRepository, times(1)).salvar(any());
         verify(animalRepository, times(1)).salvar(boi);
     }
 

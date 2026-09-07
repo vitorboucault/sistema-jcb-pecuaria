@@ -48,6 +48,6 @@ public class RegistrarVendaAnimalUseCase {
         animal.registrarVenda();
         vendaRepository.salvar(venda);
         animalRepository.salvar(animal);
-        return animal.getId();
+        return venda.getId();
     }
 }
