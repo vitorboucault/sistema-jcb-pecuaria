@@ -292,8 +292,10 @@ export const RebanhoPage = () => {
                     (animal) =>
                         animal.sexo === 'FEMEA' &&
                         animal.status === 'ATIVO' &&
-                        animal.categoria === 'VACA' ||
-                        animal.categoria === 'NOVILHA'
+                        (
+                            animal.categoria === 'VACA' ||
+                            animal.categoria === 'NOVILHA'
+                        )
                 )}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}

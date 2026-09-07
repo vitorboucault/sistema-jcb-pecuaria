@@ -251,4 +251,32 @@ class ExcluirAnimalUseCaseTest {
         verify(despesaRepository, never()).excluirPorId(despesaOperacional.getId());
     }
 
+    @Test
+    @DisplayName("Bloqueia exclusao de Matriz com Filhos")
+    void deveBloquearExclusaoDeMatrizComFilhos() {
+        UUID animalId = UUID.randomUUID();
+
+        Animal animalAtivo = new Animal(animalId,
+                "01", LocalDate.of(2024, 1, 1),
+                Sexo.FEMEA, Categoria.VACA, Status.ATIVO, null, null);
+
+        when(animalRepository.buscarPorId(animalId))
+                .thenReturn(Optional.of(animalAtivo));
+
+        when(pesagemRepository.buscarHistoricoPorAnimal(animalId))
+                .thenReturn(List.of());
+
+        when(despesaRepository.buscarPorAnimal(animalId))
+                .thenReturn(List.of());
+
+        when(animalRepository.existeFilhoComMaeId(animalId))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> useCase.executar(animalId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("matriz");
+
+        verify(animalRepository, never()).excluirPorId(animalId);
+    }
+
 }
