@@ -16,7 +16,9 @@ import com.br.usecase.manejo.ObterResumoRebanhoUseCase;
 import com.br.usecase.manejo.RegistrarCompraAnimalUseCase;
 import com.br.usecase.manejo.RegistrarNascimentoUseCase;
 import com.br.core.domain.model.Animal;
+import com.br.core.domain.model.Lote;
 import com.br.core.domain.model.Pagina;
+import com.br.core.domain.model.Pesagem;
 import com.br.core.domain.repository.AnimalRepository;
 import com.br.core.domain.repository.LoteRepository;
 import com.br.core.domain.repository.PesagemRepository;
@@ -32,6 +34,8 @@ import jakarta.validation.Valid;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @RestController
@@ -118,8 +122,12 @@ public class AnimalController {
             @RequestParam(defaultValue = "10") int tamanho) {
 
         Pagina<Animal> resultado = animalRepository.buscarTodosPaginado(pagina, tamanho);
-        List<AnimalResumoDTO> animais = resultado.conteudo().stream()
-                .map(this::paraResumo)
+        List<Animal> animaisDaPagina = resultado.conteudo();
+        Map<UUID, Lote> lotesPorId = buscarLotesDaPagina(animaisDaPagina);
+        Map<UUID, Pesagem> ultimasPesagensPorAnimalId = buscarUltimasPesagensDaPagina(animaisDaPagina);
+
+        List<AnimalResumoDTO> animais = animaisDaPagina.stream()
+                .map(animal -> paraResumo(animal, lotesPorId, ultimasPesagensPorAnimalId))
                 .toList();
         return ResponseEntity.ok(new Pagina<>(animais, resultado.numeroPagina(), resultado.tamanhoPagina(),
                 resultado.totalElementos(), resultado.totalPaginas()));
@@ -149,13 +157,29 @@ public class AnimalController {
         return ResponseEntity.noContent().build();
     }
 
-    private AnimalResumoDTO paraResumo(Animal animal) {
-        String nomeLote = animal.getLoteId() == null ? null : loteRepository.buscarPorId(animal.getLoteId())
-                .map(lote -> lote.getNome())
-                .orElse(null);
-        Double pesoAtual = pesagemRepository.buscarUltimaPesagemDoAnimal(animal.getId())
-                .map(pesagem -> pesagem.getPeso())
-                .orElse(null);
+    private Map<UUID, Lote> buscarLotesDaPagina(List<Animal> animais) {
+        List<UUID> loteIds = animais.stream()
+                .map(Animal::getLoteId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        return loteRepository.buscarPorIds(loteIds);
+    }
+
+    private Map<UUID, Pesagem> buscarUltimasPesagensDaPagina(List<Animal> animais) {
+        List<UUID> animalIds = animais.stream()
+                .map(Animal::getId)
+                .toList();
+
+        return pesagemRepository.buscarUltimasPesagensPorAnimalIds(animalIds);
+    }
+
+    private AnimalResumoDTO paraResumo(Animal animal, Map<UUID, Lote> lotesPorId, Map<UUID, Pesagem> ultimasPesagensPorAnimalId) {
+        Lote lote = animal.getLoteId() == null ? null : lotesPorId.get(animal.getLoteId());
+        Pesagem ultimaPesagem = ultimasPesagensPorAnimalId.get(animal.getId());
+        String nomeLote = lote == null ? null : lote.getNome();
+        Double pesoAtual = ultimaPesagem == null ? null : ultimaPesagem.getPeso();
 
         return new AnimalResumoDTO(
                 animal.getId(), animal.getBrincoRgd(), animal.getCategoriaAtual().name(), animal.getSexo().name(),

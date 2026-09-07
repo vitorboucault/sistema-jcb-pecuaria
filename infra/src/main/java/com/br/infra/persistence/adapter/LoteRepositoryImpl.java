@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -36,6 +37,17 @@ public class LoteRepositoryImpl implements LoteRepository {
     public Optional<Lote> buscarPorId(UUID id) {
         return springDataRepository.findById(id)
                 .map(mapper::toDomain);
+    }
+
+    @Override
+    public Map<UUID, Lote> buscarPorIds(List<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Map.of();
+        }
+
+        return springDataRepository.findAllById(ids).stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toMap(Lote::getId, lote -> lote));
     }
 
     @Override

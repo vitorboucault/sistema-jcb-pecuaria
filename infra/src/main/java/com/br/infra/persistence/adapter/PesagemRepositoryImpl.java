@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -48,6 +49,17 @@ public class PesagemRepositoryImpl implements PesagemRepository {
     public Optional<Pesagem> buscarUltimaPesagemDoAnimal(UUID animalId) {
         return springDataRepository.findFirstByAnimalIdOrderByDataPesagemDesc(animalId)
                 .map(mapper::toDomain);
+    }
+
+    @Override
+    public Map<UUID, Pesagem> buscarUltimasPesagensPorAnimalIds(List<UUID> animalIds) {
+        if (animalIds == null || animalIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return springDataRepository.buscarUltimasPesagensPorAnimalIds(animalIds).stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toMap(Pesagem::getAnimalId, pesagem -> pesagem, (atual, ignorada) -> atual));
     }
 
     @Override
