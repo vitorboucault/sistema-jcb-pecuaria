@@ -15,6 +15,7 @@ import java.util.UUID;
 @Repository
 public interface SpringDataDespesaRepository extends JpaRepository<DespesaEntity, UUID> {
     List<DespesaEntity> findByTipoAndCentroCustoId(String tipo, UUID centroCustoId);
+    List<DespesaEntity> findByTipoAndCentroCustoIdAndTipoCentroCusto(String tipo, UUID centroCustoId, String tipoCentroCusto);
     List<DespesaEntity> findByTipoAndDataTransacaoBetween(String tipo, LocalDate inicio, LocalDate fim);
     boolean existsByTipoAndCentroCustoIdAndTipoCentroCusto(String tipo, UUID centroCustoId, String tipoCentroCusto);
 

@@ -12,7 +12,9 @@ import java.util.UUID;
 
 public interface DespesaRepository {
     void salvar(Despesa despesa);
+    void excluirPorId(UUID id);
     List<Despesa> buscarPorLote(UUID loteId);
+    List<Despesa> buscarPorAnimal(UUID animalId);
     List<Despesa> buscarPorPeriodo(LocalDate inicio, LocalDate fim);
     BigDecimal somarDespesasNoPeriodo(LocalDate inicio, LocalDate fim);
     Pagina<Despesa> buscarTodosPaginado(int pagina, int tamanho);

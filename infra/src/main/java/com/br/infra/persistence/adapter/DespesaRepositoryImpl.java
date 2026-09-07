@@ -34,8 +34,20 @@ public class DespesaRepositoryImpl implements DespesaRepository {
     }
 
     @Override
+    public void excluirPorId(UUID id) {
+        springDataRepository.deleteById(id);
+    }
+
+    @Override
     public List<Despesa> buscarPorLote(UUID loteId) {
         return springDataRepository.findByTipoAndCentroCustoId("DESPESA", loteId).stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Despesa> buscarPorAnimal(UUID animalId) {
+        return springDataRepository.findByTipoAndCentroCustoIdAndTipoCentroCusto("DESPESA", animalId, "ANIMAL").stream()
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
     }

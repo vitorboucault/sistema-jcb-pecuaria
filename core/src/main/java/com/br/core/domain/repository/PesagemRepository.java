@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface PesagemRepository {
     void salvar(Pesagem pesagem);
+    void excluirPorId(UUID id);
     List<Pesagem> buscarPesagemPorId(UUID id);
     Optional<Pesagem> buscarUltimaPesagemDoAnimal(UUID animalId);
     List<Pesagem> buscarHistoricoPorAnimal(UUID id);

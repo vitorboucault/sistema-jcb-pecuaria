@@ -30,6 +30,12 @@ public class PesagemRepositoryImpl implements PesagemRepository {
         PesagemEntity entity = mapper.toEntity(pesagem);
         springDataRepository.save(entity);
     }
+
+    @Override
+    public void excluirPorId(UUID id) {
+        springDataRepository.deleteById(id);
+    }
+
     @Override
     public List<Pesagem> buscarPesagemPorId(UUID id) {
         return springDataRepository.findById(id)
