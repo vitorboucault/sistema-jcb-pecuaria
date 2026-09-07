@@ -17,15 +17,19 @@ public interface SpringDataPesagemRepository extends JpaRepository<PesagemEntity
     Optional<PesagemEntity> findFirstByAnimalIdOrderByDataPesagemDesc(UUID animalId);
     boolean existsByAnimalId(UUID animalId);
 
-    @Query("""
-            SELECT p FROM PesagemEntity p
-            WHERE p.animalId IN :animalIds
-            AND p.dataPesagem = (
-                SELECT MAX(p2.dataPesagem)
-                FROM PesagemEntity p2
-                WHERE p2.animalId = p.animalId
-            )
-            """)
+    @Query(value = """
+            SELECT id, animal_id, data_pesagem, peso_kg
+            FROM (
+                SELECT p.*,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY p.animal_id
+                           ORDER BY p.data_pesagem DESC, p.id DESC
+                       ) AS rn
+                FROM pesagem p
+                WHERE p.animal_id IN (:animalIds)
+            ) ultimas
+            WHERE rn = 1
+            """, nativeQuery = true)
     List<PesagemEntity> buscarUltimasPesagensPorAnimalIds(@Param("animalIds") List<UUID> animalIds);
 
     @Query("SELECT COALESCE(SUM(p.peso), 0.0) FROM PesagemEntity p WHERE p.dataPesagem BETWEEN :inicio AND :fim")

@@ -59,7 +59,7 @@ public class PesagemRepositoryImpl implements PesagemRepository {
 
         return springDataRepository.buscarUltimasPesagensPorAnimalIds(animalIds).stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toMap(Pesagem::getAnimalId, pesagem -> pesagem, (atual, ignorada) -> atual));
+                .collect(Collectors.toMap(Pesagem::getAnimalId, pesagem -> pesagem));
     }
 
     @Override
