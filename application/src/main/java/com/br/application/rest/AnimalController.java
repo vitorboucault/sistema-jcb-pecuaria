@@ -27,6 +27,7 @@ import com.br.core.domain.enums.Sexo;
 import com.br.usecase.manejo.RegistrarPesagemUseCase;
 import com.br.usecase.manejo.MovimentarAnimalUseCase;
 import com.br.usecase.manejo.RegistrarMorteAnimalUseCase;
+import com.br.usecase.manejo.ReverterMorteAnimalUseCase;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.transaction.Transactional;
@@ -53,6 +54,7 @@ public class AnimalController {
     private final ObterResumoRebanhoUseCase obterResumoRebanhoUseCase;
     private final AtualizarAnimalUseCase atualizarAnimalUseCase;
     private final ExcluirAnimalUseCase excluirAnimalUseCase;
+    private final ReverterMorteAnimalUseCase reverterMorteAnimalUseCase;
 
     public AnimalController(
             RegistrarNascimentoUseCase registrarNascimentoUseCase,
@@ -65,7 +67,8 @@ public class AnimalController {
             RegistrarCompraAnimalUseCase registrarCompraAnimalUseCase,
             ObterResumoRebanhoUseCase obterResumoRebanhoUseCase,
             AtualizarAnimalUseCase atualizarAnimalUseCase,
-            ExcluirAnimalUseCase excluirAnimalUseCase) {
+            ExcluirAnimalUseCase excluirAnimalUseCase,
+            ReverterMorteAnimalUseCase reverterMorteAnimalUseCase) {
         this.registrarNascimentoUseCase = registrarNascimentoUseCase;
         this.registrarPesagemUseCase = registrarPesagemUseCase;
         this.animalRepository = animalRepository;
@@ -77,6 +80,7 @@ public class AnimalController {
         this.obterResumoRebanhoUseCase = obterResumoRebanhoUseCase;
         this.atualizarAnimalUseCase = atualizarAnimalUseCase;
         this.excluirAnimalUseCase = excluirAnimalUseCase;
+        this.reverterMorteAnimalUseCase = reverterMorteAnimalUseCase;
     }
 
     @PostMapping
@@ -208,6 +212,12 @@ public class AnimalController {
     @DeleteMapping("/{id}/baixa-morte")
     public ResponseEntity<Void> registrarMorte(@PathVariable UUID id, @RequestParam LocalDate dataMorte) {
         registrarMorteAnimalUseCase.executar(new RegistrarMorteAnimalCommand(id, dataMorte));
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/reverter-morte")
+    public ResponseEntity<Void> reverterMorte(@PathVariable UUID id) {
+        reverterMorteAnimalUseCase.executar(id);
         return ResponseEntity.noContent().build();
     }
 
