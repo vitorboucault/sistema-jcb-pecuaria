@@ -1,0 +1,15 @@
+{
+  "testCommand": "bash scripts/check-spec-tap.sh",
+  "reporter": "tap",
+  "testGlobs": [
+    "test/**",
+    "tests/**",
+    "src/**/*.test.*",
+    "src/**/*.spec.*",
+    "__tests__/**",
+    "**/src/test/**/*.java"
+  ],
+  "srcGlobs": [
+    "src/**"
+  ]
+}
