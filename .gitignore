@@ -37,3 +37,9 @@ frontend/dist/
 frontend/.vite/
 .DS_Store
 .env
+/.env.example
+
+### Agentes e Skills ###
+.agents/skills/onp-spec-driven/
+/onpspec.config.json
+/.spec
