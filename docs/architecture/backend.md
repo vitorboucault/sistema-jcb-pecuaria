@@ -23,7 +23,7 @@ sistemajcb (pom.xml raiz)
   - `com.br.core.domain.enums`: Enums de domínio (ex: `Status`, `Sexo`, `Categoria`, `OrigemPesagem`).
   - `com.br.core.domain.repository`: Portas (interfaces puras) que definem contratos de persistência (ex: `AnimalRepository`, `VendaAnimalRepository`).
 
-> Exceção arquitetural legada: a regra preferencial é manter as portas de persistência no lado de domínio (`core`). Atualmente existe uma exceção em `usecase/port`, como `FornecimentoRacaoRepositoryPort`. Não criar novas portas nesse local sem necessidade e não refatorar essa exceção nesta tarefa.
+> Exceção arquitetural legada: a regra preferencial é manter as portas de persistência no lado de domínio (`core`). Atualmente existe uma exceção em `usecase/port`, como `FornecimentoRacaoRepositoryPort`. A refatoração dessa exceção deve ser tratada em uma tarefa arquitetural dedicada.
 
 ### 1.2. `usecase`
 - **Finalidade**: Orquestra fluxos e casos de uso da aplicação.
