@@ -24,7 +24,7 @@ frontend/src/
 │   ├── auth/             # Autenticação, login e tipos de sessão
 │   ├── dashboard/        # Painel principal e métricas do rebanho
 │   └── rebanho/          # Gestão de animais, lotes, pesagens e baixas
-│       ├── api/          # Chamadas HTTP do domínio (ex: animal.api.ts)
+│       ├── api/          # Chamadas HTTP do domínio (ex: rebanhoService.ts)
 │       ├── components/   # Componentes e modais específicos do domínio
 │       ├── pages/        # Telas completas roteáveis (ex: RebanhoPage.tsx)
 │       └── types/        # Interfaces e types TypeScript do domínio

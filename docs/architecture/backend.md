@@ -23,6 +23,8 @@ sistemajcb (pom.xml raiz)
   - `com.br.core.domain.enums`: Enums de domínio (ex: `Status`, `Sexo`, `Categoria`, `OrigemPesagem`).
   - `com.br.core.domain.repository`: Portas (interfaces puras) que definem contratos de persistência (ex: `AnimalRepository`, `VendaAnimalRepository`).
 
+> Exceção arquitetural legada: a regra preferencial é manter as portas de persistência no lado de domínio (`core`). Atualmente existe uma exceção em `usecase/port`, como `FornecimentoRacaoRepositoryPort`. Não criar novas portas nesse local sem necessidade e não refatorar essa exceção nesta tarefa.
+
 ### 1.2. `usecase`
 - **Finalidade**: Orquestra fluxos e casos de uso da aplicação.
 - **Regra**: Depende exclusivamente do módulo `core` e de anotações Jakarta (`jakarta.inject.Named`, `jakarta.transaction.Transactional`). Não referencia classes do Spring Boot nem da infraestrutura.

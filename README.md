@@ -19,7 +19,7 @@ O **Sistema JCB Pecuária** tem como objetivo apoiar a gestão de pecuária de c
 - [ ] Implementação das funcionalidades principais
 - [ ] Testes automatizados cobrindo os módulos
 - [ ] Documentação da API
-- [ ] Pipeline de CI/CD
+- [x] Pipeline de CI
 - [ ] Primeira versão utilizável (release)
 
 ## Arquitetura
@@ -45,7 +45,7 @@ O `frontend/` contém a aplicação cliente, servida separadamente do backend.
 - JaCoCo (cobertura de testes)
 
 **Frontend**
-- Node.js / Vite *(detalhes a confirmar)*
+- Node.js 24 / Vite 8
 
 ## Como executar (provisório)
 
@@ -70,8 +70,8 @@ npm run dev
 
 - JDK 24+
 - Maven (ou usar o wrapper `mvnw` incluído)
-- Node.js (versão a definir)
-- Banco de dados: *a definir*
+- Node.js 24+
+- Banco de dados: PostgreSQL
 
 ### Variáveis de ambiente
 
@@ -96,7 +96,7 @@ sistema-jcb-pecuaria/
 
 - [ ] Escrever documentação de arquitetura mais detalhada
 - [ ] Adicionar testes automatizados
-- [ ] Configurar CI (build + testes a cada push/PR)
+- [x] Configurar CI (build + testes a cada push/PR)
 - [ ] Definir e documentar variáveis de ambiente/configuração
 - [ ] Publicar primeira versão (release)
 

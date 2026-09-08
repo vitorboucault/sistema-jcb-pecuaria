@@ -1,6 +1,6 @@
 # Domínio: Vendas
 
-O domínio de **Vendas** gerencia a saída comercial de animais do rebanho, calculando receitas de acordo com diferentes modalidades de comercialização e permitindo a reversão em caso de lançamentos indevidos.
+O domínio de **Vendas** gerencia a saída comercial de animais do rebanho e calcula receitas de acordo com diferentes modalidades de comercialização.
 
 ---
 
@@ -29,9 +29,4 @@ O domínio de **Vendas** gerencia a saída comercial de animais do rebanho, calc
   - O animal é desvinculado de seu lote atual (`loteId = null`).
   - Um registro de `VendaAnimal` é persistido na base.
 
-### 2.2. Reversão de Venda (`ReverterVendaAnimalUseCase`)
-- **Pré-condição**: O animal deve existir e possuir status `VENDIDO`. Deve haver exatamente um registro de venda correspondente.
-- **Efeitos colaterais**:
-  - O animal tem seu status revertido para `ATIVO` via `animal.reverterVenda()`.
-  - O registro de `VendaAnimal` associado é excluído da base.
-  - O animal permanece desvinculado de lote (`loteId = null`), permitindo ao operador destiná-lo ao lote correto de manejo.
+Reversão de venda por lançamento indevido está planejada para uma sprint futura.
