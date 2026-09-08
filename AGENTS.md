@@ -48,7 +48,7 @@ Antes de submeter qualquer código ou concluir uma tarefa, execute os scripts de
   ```bash
   ./scripts/check-backend.sh
   ```
-- **Frontend (lint + build Vite)**:
+- **Frontend (npm ci + lint + build Vite)**:
   ```bash
   ./scripts/check-frontend.sh
   ```
@@ -59,11 +59,46 @@ Antes de submeter qualquer código ou concluir uma tarefa, execute os scripts de
 
 ---
 
+## Testing
+
+- **Mudança de regra de negócio exige teste**: toda nova funcionalidade ou alteração em regras deve ser coberta.
+- **Bug fix exige teste de regressão**: reproduzir o defeito em teste antes ou junto à correção.
+- **Testes de domínio no `core`**: cobrem invariantes, validações e transições de estado puras.
+- **Mockito no `usecase`**: valida regras de aplicação, fluxos condicionais e efeitos colaterais em portas.
+- **MockMvc no `application`**: valida contratos HTTP, roteamento, serialização e códigos de status.
+- **Testes de integração no `infra`**: validam mapeamentos JPA, queries customizadas e persistência real/H2.
+- **Nunca afirmar que teste passou sem executá-lo**: rode a suíte antes de reportar conclusão.
+
+---
+
+## Code Style
+
+- **Consistência local**: siga o padrão de formatação e nomenclatura dos arquivos próximos.
+- **Constructor Injection**: use injeção via construtor (evite `@Autowired` em campos).
+- **Controllers enxutos**: mantenha controllers sem regras de negócio; apenas orquestram chamadas a casos de uso.
+- **Evite refactors fora de escopo**: limite as mudanças estritamente ao objetivo da tarefa.
+- **TypeScript estrito**: utilize tipos explícitos para entidades, payloads e retornos.
+- **Evite `any`**: não use `any` para contornar checagens de compilação.
+
+---
+
+## Security
+
+- **Segredos protegidos**: nunca commitar `.env`, secrets, tokens ou credenciais no repositório.
+- **Exemplos fictícios**: `.env.example` deve conter apenas valores placeholder/fictícios para desenvolvimento local.
+- **Sem atalhos de teste**: não desabilitar filtros de segurança ou validações para facilitar testes.
+- **Logs seguros**: nunca logar senhas, tokens JWT ou dados sensíveis em logs de aplicação.
+- **Ocultação de detalhes internos**: não expor stack traces ou erros internos de infraestrutura ao cliente HTTP.
+
+---
+
 ## Git & Fluxo de Trabalho
 
 - **Nunca trabalhar diretamente na `main`**.
 - **Uma feature por branch**.
 - **Não fazer merge automaticamente**.
+- **Commits pequenos e coerentes**: preferir prefixos convencionais (`feat:`, `fix:`, `test:`, `docs:`, `ci:`, `chore:`).
+- **Descrição de PR**: PRs devem explicar o que mudou, por quê e como foi validado.
 - Sempre mostrar arquivos alterados e testes executados no encerramento da tarefa.
 
 ---

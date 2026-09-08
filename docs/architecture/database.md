@@ -27,7 +27,7 @@ O versionamento do esquema é gerenciado exclusivamente pelo **Flyway**.
 5. `V5__Create_Tabela_Venda_Animal.sql`: Registro de vendas e comercialização de animais.
 6. `V6__Create_Tabela_Fornecimento_Racao.sql`: Registro de alimentação e suplementação por lote.
 7. `V7__Add_Data_Morte_Animal.sql`: Inclusão de `data_morte` na tabela de animais para suporte a baixas e reversões.
-8. `V8__Add_Origem_Pesagem.sql`: Inclusão da coluna `origem` em `pesagem` (`CADASTRO_INICIAL`, `ROTINA`).
+8. `V8__Add_Origem_Pesagem.sql`: Inclusão da coluna `origem` em `pesagem` (`CADASTRO_INICIAL`, `OPERACIONAL`).
 
 ---
 

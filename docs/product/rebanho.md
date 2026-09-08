@@ -10,7 +10,7 @@ O domínio de **Rebanho** é responsável pelo ciclo de vida completo dos animai
 - `id`: UUID único.
 - `brincoRgd`: Código identificador visual ou genealógico obrigatório.
 - `sexo`: `MACHO` ou `FEMEA`.
-- `categoriaAtual`: `BEZERRO`, `BEZERRA`, `GARROTE`, `NOVILHA`, `BOI`, `VACA`.
+- `categoriaAtual`: `BEZERRO`, `BEZERRA`, `GARROTE`, `NOVILHA`, `VACA`, `TOURO`, `BOI`.
 - `status`: Estado atual do animal no rebanho:
   - `ATIVO`: Presente na fazenda e participando do manejo regular.
   - `MORTO`: Baixado por óbito.
@@ -44,7 +44,7 @@ O domínio de **Rebanho** é responsável pelo ciclo de vida completo dos animai
 
 ### 2.2. Manejo e Pesagens
 - **Pesagem Inicial**: Registrada com origem `OrigemPesagem.CADASTRO_INICIAL`.
-- **Pesagens de Rotina**: Registradas com origem `OrigemPesagem.ROTINA` para cálculo de Ganho Médio Diário (GMD).
+- **Pesagens Operacionais**: Registradas com origem `OrigemPesagem.OPERACIONAL` para acompanhamento de manejo e cálculo de Ganho Médio Diário (GMD).
 - **Movimentação de Lote**: `MovimentarAnimalUseCase` altera o `loteId` e registra o histórico na tabela de movimentações.
 
 ### 2.3. Baixa por Morte e Reversão
