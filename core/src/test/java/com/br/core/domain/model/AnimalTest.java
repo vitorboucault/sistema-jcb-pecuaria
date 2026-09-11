@@ -32,7 +32,7 @@ public class AnimalTest {
     }
 
     @Test
-    @DisplayName("Animal ativo pode receber morte e perde o lote")
+    @DisplayName("@spec:AC-201 Animal ativo recebe morte e preserva o lote")
     void animalAtivoPodeReceberMorte() {
         UUID loteId = UUID.randomUUID();
         Animal animal = animalComStatus(Status.ATIVO, loteId, null);
@@ -40,7 +40,7 @@ public class AnimalTest {
         animal.registrarMorte(LocalDate.now());
 
         assertThat(animal.getStatus()).isEqualTo(Status.MORTO);
-        assertThat(animal.getLoteId()).isNull();
+        assertThat(animal.getLoteId()).isEqualTo(loteId);
         assertThat(animal.getDataMorte()).isEqualTo(LocalDate.now());
     }
 
@@ -56,14 +56,16 @@ public class AnimalTest {
     }
 
     @Test
+    @DisplayName("@spec:AC-202 Reverter morte reativa animal, limpa data e preserva lote")
     void reverterMorteReativaAnimalELimpaDataSemRecriarLote() {
-        Animal animal = animalComStatus(Status.MORTO, UUID.randomUUID(), LocalDate.now().minusDays(1));
+        UUID loteId = UUID.randomUUID();
+        Animal animal = animalComStatus(Status.MORTO, loteId, LocalDate.now().minusDays(1));
 
         animal.reverterMorte();
 
         assertThat(animal.getStatus()).isEqualTo(Status.ATIVO);
         assertThat(animal.getDataMorte()).isNull();
-        assertThat(animal.getLoteId()).isNull();
+        assertThat(animal.getLoteId()).isEqualTo(loteId);
     }
 
     @Test

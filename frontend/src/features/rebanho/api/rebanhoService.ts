@@ -1,9 +1,14 @@
 import { api } from '../../../shared/api/client';
-import type { Animal, AtualizarAnimalInput, CadastrarAnimalInput, Lote, Pagina, ResumoRebanho } from '../types';
+import type { Animal, AtualizarAnimalInput, CadastrarAnimalInput, Lote, Pagina, ResumoRebanho, StatusAnimal } from '../types';
 
 export const rebanhoService = {
-    async listarAnimais(): Promise<Animal[]> {
-        const response = await api.get<Pagina<Animal>>('v1/animais?tamanho=100');
+    async listarAnimais(status?: StatusAnimal): Promise<Animal[]> {
+        const response = await api.get<Pagina<Animal>>('v1/animais', {
+            params: {
+                tamanho: 100,
+                ...(status ? { status } : {}),
+            },
+        });
         return response.data.conteudo;
     },
 
@@ -25,6 +30,10 @@ export const rebanhoService = {
         await api.delete(`v1/animais/${id}/baixa-morte`, {
             params: { dataMorte },
         });
+    },
+
+    async reverterMorte(id: string): Promise<void> {
+        await api.post(`v1/animais/${id}/reverter-morte`);
     },
 
     async excluirAnimal(id: string): Promise<void> {

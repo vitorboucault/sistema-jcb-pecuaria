@@ -25,7 +25,8 @@ export const AnimalModalForm = ({
     const [sexo, setSexo] = useState<'MACHO' | 'FEMEA'>('MACHO');
     const [peso, setPeso] = useState<number>(200);
 
-    const hoje = new Date().toISOString().split('T')[0];
+    const agora = new Date();
+    const hoje = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
     const [dataNascimento, setDataNascimento] = useState(hoje);
     const [dataEntrada, setDataEntrada] = useState(hoje);
     const [dataCompra, setDataCompra] = useState(hoje);

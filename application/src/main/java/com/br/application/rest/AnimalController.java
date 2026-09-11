@@ -5,6 +5,7 @@ import com.br.application.dto.AtualizarAnimalRequest;
 import com.br.application.dto.AnimalResumoDTO;
 import com.br.application.dto.AnimalInputDTO;
 import com.br.core.domain.enums.Categoria;
+import com.br.core.domain.enums.Status;
 import com.br.usecase.dto.AtualizarAnimalCommand;
 import com.br.usecase.dto.RegistrarCompraAnimalCommand;
 import com.br.usecase.dto.RegistrarMorteAnimalCommand;
@@ -124,9 +125,12 @@ public class AnimalController {
     @GetMapping
     public ResponseEntity<Pagina<AnimalResumoDTO>> listar(
             @RequestParam(defaultValue = "0") int pagina,
-            @RequestParam(defaultValue = "10") int tamanho) {
+            @RequestParam(defaultValue = "10") int tamanho,
+            @RequestParam(required = false) Status status) {
 
-        Pagina<Animal> resultado = animalRepository.buscarTodosPaginado(pagina, tamanho);
+        Pagina<Animal> resultado = status == null
+                ? animalRepository.buscarTodosPaginado(pagina, tamanho)
+                : animalRepository.buscarPorStatusPaginado(status, pagina, tamanho);
         List<Animal> animaisDaPagina = resultado.conteudo();
         Map<UUID, Lote> lotesPorId = buscarLotesDaPagina(animaisDaPagina);
         Map<UUID, Pesagem> ultimasPesagensPorAnimalId = buscarUltimasPesagensDaPagina(animaisDaPagina);

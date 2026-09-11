@@ -73,16 +73,17 @@ class ManejoLoteEMorteTest {
     }
 
     @Test
-    @DisplayName("Lote deve ser removido ao registrar morte")
-    void loteDeveSerRemovidoAoRegistrarMorte() {
+    @DisplayName("@spec:AC-201 Lote é preservado ao registrar morte")
+    void loteDeveSerPreservadoAoRegistrarMorte() {
         UUID animalId = UUID.randomUUID();
-        Animal animal = new Animal(animalId, "VACA-03", LocalDate.now().minusYears(3), Sexo.FEMEA, Categoria.VACA, Status.ATIVO, null, UUID.randomUUID());
+        UUID loteId = UUID.randomUUID();
+        Animal animal = new Animal(animalId, "VACA-03", LocalDate.now().minusYears(3), Sexo.FEMEA, Categoria.VACA, Status.ATIVO, null, loteId);
 
         when(animalRepository.buscarPorId(animalId)).thenReturn(Optional.of(animal));
 
         registrarMorteUseCase.executar(new RegistrarMorteAnimalCommand(animalId, LocalDate.now()));
 
-        assertThat(animal.getLoteId()).isNull();
+        assertThat(animal.getLoteId()).isEqualTo(loteId);
         verify(animalRepository).salvar(animal);
     }
 

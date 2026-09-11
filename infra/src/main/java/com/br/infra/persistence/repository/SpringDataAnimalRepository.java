@@ -29,7 +29,7 @@ public interface SpringDataAnimalRepository extends JpaRepository<AnimalEntity, 
             " a.categoriaAtual = 'GARROTE')")
     List<AnimalEntity> buscarAnimaisElegiveisParaEvolucao();
 
-    List<AnimalEntity> findByLoteAtual(UUID loteAtual);
+    List<AnimalEntity> findByLoteAtualAndStatus(UUID loteAtual, String status);
 
     long countByStatus(String status);
     Page<AnimalEntity> findByStatus(String status, Pageable pageable);

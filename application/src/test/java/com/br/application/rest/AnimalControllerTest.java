@@ -27,6 +27,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -49,7 +50,7 @@ class AnimalControllerTest {
     }
 
     @Test
-    @DisplayName("Listagem de animais busca lotes e ultimas pesagens em lote")
+    @DisplayName("@spec:AC-107 Listagem de animais busca lotes e ultimas pesagens em lote")
     void listarBuscaLotesEUltimasPesagensEmLote() {
         UUID loteId = UUID.randomUUID();
         UUID animalComLoteId = UUID.randomUUID();
@@ -81,7 +82,7 @@ class AnimalControllerTest {
                 null
         );
 
-        Pagina<AnimalResumoDTO> pagina = controller.listar(0, 10).getBody();
+        Pagina<AnimalResumoDTO> pagina = controller.listar(0, 10, null).getBody();
 
         assertThat(pagina).isNotNull();
         assertThat(pagina.conteudo()).hasSize(2);
@@ -97,11 +98,127 @@ class AnimalControllerTest {
         assertThat(pesagemRepository.animalIdsBuscados).containsExactly(animalComLoteId, animalSemLoteId);
     }
 
+    @Test
+    @DisplayName("@spec:AC-101 Sem status usa somente a consulta padrão")
+    void listarSemStatusUsaConsultaPadrao() {
+        AnimalRepositoryFake animalRepository = new AnimalRepositoryFake(paginaVazia());
+        AnimalController controller = criarController(animalRepository);
+
+        controller.listar(0, 10, null);
+
+        assertThat(animalRepository.buscarTodosPaginadoChamadas).isEqualTo(1);
+        assertThat(animalRepository.buscarPorStatusPaginadoChamadas).isZero();
+        assertThat(animalRepository.paginaConsultada).isEqualTo(0);
+        assertThat(animalRepository.tamanhoConsultado).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-102 Status ATIVO usa a consulta específica")
+    void listarPorStatusAtivo() {
+        AnimalRepositoryFake animalRepository = new AnimalRepositoryFake(
+                paginaVazia(), Map.of(Status.ATIVO, paginaVazia()));
+        AnimalController controller = criarController(animalRepository);
+
+        controller.listar(0, 10, Status.ATIVO);
+
+        assertThat(animalRepository.statusConsultado).isEqualTo(Status.ATIVO);
+        assertThat(animalRepository.buscarPorStatusPaginadoChamadas).isEqualTo(1);
+        assertThat(animalRepository.buscarTodosPaginadoChamadas).isZero();
+        assertThat(animalRepository.paginaConsultada).isEqualTo(0);
+        assertThat(animalRepository.tamanhoConsultado).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-103 Status MORTO usa a consulta específica")
+    void listarPorStatusMorto() {
+        AnimalRepositoryFake animalRepository = new AnimalRepositoryFake(
+                paginaVazia(), Map.of(Status.MORTO, paginaVazia()));
+        AnimalController controller = criarController(animalRepository);
+
+        controller.listar(0, 10, Status.MORTO);
+
+        assertThat(animalRepository.statusConsultado).isEqualTo(Status.MORTO);
+        assertThat(animalRepository.buscarPorStatusPaginadoChamadas).isEqualTo(1);
+        assertThat(animalRepository.buscarTodosPaginadoChamadas).isZero();
+        assertThat(animalRepository.paginaConsultada).isEqualTo(0);
+        assertThat(animalRepository.tamanhoConsultado).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-104 Status VENDIDO usa a consulta específica")
+    void listarPorStatusVendido() {
+        AnimalRepositoryFake animalRepository = new AnimalRepositoryFake(
+                paginaVazia(), Map.of(Status.VENDIDO, paginaVazia()));
+        AnimalController controller = criarController(animalRepository);
+
+        controller.listar(0, 10, Status.VENDIDO);
+
+        assertThat(animalRepository.statusConsultado).isEqualTo(Status.VENDIDO);
+        assertThat(animalRepository.buscarPorStatusPaginadoChamadas).isEqualTo(1);
+        assertThat(animalRepository.buscarTodosPaginadoChamadas).isZero();
+        assertThat(animalRepository.paginaConsultada).isEqualTo(0);
+        assertThat(animalRepository.tamanhoConsultado).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-105 Status inválido retorna 400 sem consultar o repositório")
+    void listarComStatusInvalidoRetornaBadRequestSemConsultarRepositorio() throws Exception {
+        AnimalRepositoryFake animalRepository = new AnimalRepositoryFake(paginaVazia());
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(criarController(animalRepository)).build();
+
+        mockMvc.perform(get("/api/v1/animais").param("status", "INVALIDO"))
+                .andExpect(status().isBadRequest());
+
+        assertThat(animalRepository.buscarTodosPaginadoChamadas).isZero();
+        assertThat(animalRepository.buscarPorStatusPaginadoChamadas).isZero();
+    }
+
+    @Test
+    @DisplayName("@spec:AC-106 Consulta filtrada preserva metadados de paginação")
+    void listarPorStatusPreservaMetadadosDePaginacao() {
+        Pagina<Animal> paginaFiltrada = new Pagina<>(List.of(), 2, 5, 11, 3);
+        AnimalRepositoryFake animalRepository = new AnimalRepositoryFake(
+                paginaVazia(), Map.of(Status.MORTO, paginaFiltrada));
+        AnimalController controller = criarController(animalRepository);
+
+        Pagina<AnimalResumoDTO> resultado = controller.listar(2, 5, Status.MORTO).getBody();
+
+        assertThat(resultado).isNotNull();
+        assertThat(resultado.numeroPagina()).isEqualTo(2);
+        assertThat(resultado.tamanhoPagina()).isEqualTo(5);
+        assertThat(resultado.totalElementos()).isEqualTo(11);
+        assertThat(resultado.totalPaginas()).isEqualTo(3);
+        assertThat(animalRepository.paginaConsultada).isEqualTo(2);
+        assertThat(animalRepository.tamanhoConsultado).isEqualTo(5);
+    }
+
+    private static Pagina<Animal> paginaVazia() {
+        return new Pagina<>(List.of(), 0, 10, 0, 0);
+    }
+
+    private static AnimalController criarController(AnimalRepository animalRepository) {
+        return new AnimalController(
+                null, null, animalRepository, new LoteRepositoryFake(Map.of()),
+                new PesagemRepositoryFake(Map.of()), null, null, null, null, null, null, null
+        );
+    }
+
     private static class AnimalRepositoryFake implements AnimalRepository {
         private final Pagina<Animal> pagina;
+        private final Map<Status, Pagina<Animal>> paginasPorStatus;
+        private int buscarTodosPaginadoChamadas;
+        private int buscarPorStatusPaginadoChamadas;
+        private int paginaConsultada;
+        private int tamanhoConsultado;
+        private Status statusConsultado;
 
         private AnimalRepositoryFake(Pagina<Animal> pagina) {
+            this(pagina, Map.of());
+        }
+
+        private AnimalRepositoryFake(Pagina<Animal> pagina, Map<Status, Pagina<Animal>> paginasPorStatus) {
             this.pagina = pagina;
+            this.paginasPorStatus = paginasPorStatus;
         }
 
         @Override
@@ -126,7 +243,19 @@ class AnimalControllerTest {
 
         @Override
         public Pagina<Animal> buscarTodosPaginado(int pagina, int tamanho) {
+            buscarTodosPaginadoChamadas++;
+            paginaConsultada = pagina;
+            tamanhoConsultado = tamanho;
             return this.pagina;
+        }
+
+        @Override
+        public Pagina<Animal> buscarPorStatusPaginado(Status status, int pagina, int tamanho) {
+            buscarPorStatusPaginadoChamadas++;
+            paginaConsultada = pagina;
+            tamanhoConsultado = tamanho;
+            statusConsultado = status;
+            return paginasPorStatus.get(status);
         }
 
         @Override

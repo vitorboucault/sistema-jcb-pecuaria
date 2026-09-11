@@ -33,17 +33,18 @@ class ReverterMorteAnimalUseCaseTest {
     private ReverterMorteAnimalUseCase useCase;
 
     @Test
-    @DisplayName("Reverte morte, limpa data e mantém animal sem lote")
+    @DisplayName("@spec:AC-202 Reverte morte, limpa data e mantém o mesmo lote")
     void deveReverterMorte() {
         UUID animalId = UUID.randomUUID();
-        Animal animal = animal(animalId, Status.MORTO, null, LocalDate.now().minusDays(1));
+        UUID loteId = UUID.randomUUID();
+        Animal animal = animal(animalId, Status.MORTO, loteId, LocalDate.now().minusDays(1));
         when(animalRepository.buscarPorId(animalId)).thenReturn(Optional.of(animal));
 
         useCase.executar(animalId);
 
         assertThat(animal.getStatus()).isEqualTo(Status.ATIVO);
         assertThat(animal.getDataMorte()).isNull();
-        assertThat(animal.getLoteId()).isNull();
+        assertThat(animal.getLoteId()).isEqualTo(loteId);
         verify(animalRepository, times(1)).salvar(animal);
     }
 
