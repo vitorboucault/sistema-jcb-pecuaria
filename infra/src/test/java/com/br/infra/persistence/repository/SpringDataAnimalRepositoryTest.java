@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -61,5 +62,22 @@ class SpringDataAnimalRepositoryTest {
         assertThat(contagem).containsEntry("BEZERRO", 2L);
         assertThat(contagem).containsEntry("VACA", 1L);
         assertThat(contagem).doesNotContainKey("MORTO");
+    }
+
+    @Test
+    @DisplayName("@spec:AC-203 @spec:AC-204 Consulta operacional de lote ignora animais mortos")
+    void deveBuscarSomenteAnimaisAtivosDoLote() {
+        UUID loteId = UUID.randomUUID();
+        AnimalEntity ativo = new AnimalEntity(UUID.randomUUID(), "ATIVO-LOTE", loteId,
+                LocalDate.now().minusYears(2), "MACHO", "BOI", "ATIVO", null);
+        AnimalEntity morto = new AnimalEntity(UUID.randomUUID(), "MORTO-LOTE", loteId,
+                LocalDate.now().minusYears(2), "MACHO", "BOI", "MORTO", null, LocalDate.now());
+
+        animalRepository.saveAll(List.of(ativo, morto));
+
+        List<AnimalEntity> atuais = animalRepository.findByLoteAtualAndStatus(loteId, "ATIVO");
+
+        assertThat(atuais).extracting(AnimalEntity::getBrincoRgd)
+                .containsExactly("ATIVO-LOTE");
     }
 }

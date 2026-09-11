@@ -1,6 +1,7 @@
 package com.br.core.domain.repository;
 
 import com.br.core.domain.enums.Categoria;
+import com.br.core.domain.enums.Status;
 import com.br.core.domain.model.Animal;
 import com.br.core.domain.model.Pagina;
 
@@ -16,6 +17,7 @@ public interface AnimalRepository {
     Optional<Animal> buscarPorBrinco(String brinco);
     List<Animal> buscarAnimaisElegiveisParaEvolucao();
     Pagina<Animal> buscarTodosPaginado(int pagina, int tamanho);
+    Pagina<Animal> buscarPorStatusPaginado(Status status, int pagina, int tamanho);
     List<Animal> buscarPorLote(UUID loteId);
     long contarAnimaisAtivos();
     Map<Categoria, Long> contarAtivosPorCategoria();

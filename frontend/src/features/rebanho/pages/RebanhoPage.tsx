@@ -1,11 +1,23 @@
 import { useEffect, useState, useCallback } from 'react';
 import { isAxiosError } from 'axios';
 import { rebanhoService } from '../api/rebanhoService';
-import type { Animal, AtualizarAnimalInput, CadastrarAnimalInput, CategoriaAnimal, Lote, ResumoRebanho } from '../types';
+import type { Animal, AtualizarAnimalInput, CadastrarAnimalInput, CategoriaAnimal, Lote, ResumoRebanho, StatusAnimal } from '../types';
 import { AnimalModalForm } from '../components/AnimalModalForm';
-import { Users, Plus, Tag, AlertCircle, Activity, Pencil, Skull, Trash2, X, Save } from 'lucide-react';
+import { Users, Plus, Tag, AlertCircle, Activity, Pencil, Skull, Trash2, RotateCcw, X, Save } from 'lucide-react';
 
 const categoriasResumo: CategoriaAnimal[] = ['BEZERRO', 'BEZERRA', 'GARROTE', 'NOVILHA', 'BOI', 'VACA', 'TOURO'];
+const statusClasses: Record<StatusAnimal, string> = {
+    ATIVO: 'bg-emerald-950/60 border-emerald-800 text-emerald-400',
+    MORTO: 'bg-stone-950 border-stone-700 text-stone-400',
+    VENDIDO: 'bg-amber-950/60 border-amber-800 text-amber-300',
+};
+
+const formatarDataLocal = (data: Date = new Date()): string => {
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const dia = String(data.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+};
 
 export const RebanhoPage = () => {
     const [animais, setAnimais] = useState<Animal[]>([]);
@@ -13,6 +25,7 @@ export const RebanhoPage = () => {
     const [resumo, setResumo] = useState<ResumoRebanho | null>(null);
     const [loading, setLoading] = useState(true);
     const [erroBanco, setErroBanco] = useState<string | null>(null);
+    const [filtroStatus, setFiltroStatus] = useState<StatusAnimal | undefined>(undefined);
     const [filtroCategoria, setFiltroCategoria] = useState<string>('TODOS');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [animalEmEdicao, setAnimalEmEdicao] = useState<Animal | null>(null);
@@ -27,7 +40,7 @@ export const RebanhoPage = () => {
         setLoading(true);
         try {
             const [dadosAnimais, dadosLotes, dadosResumo] = await Promise.all([
-                rebanhoService.listarAnimais(),
+                rebanhoService.listarAnimais(filtroStatus),
                 rebanhoService.listarLotes(),
                 rebanhoService.obterResumo(),
             ]);
@@ -47,7 +60,7 @@ export const RebanhoPage = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [filtroStatus]);
 
     useEffect(() => {
         const timeout = window.setTimeout(() => void carregarDados(), 0);
@@ -84,7 +97,7 @@ export const RebanhoPage = () => {
     };
 
     const registrarMorte = async (animal: Animal) => {
-        const dataMorte = window.prompt('Informe a data da morte (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+        const dataMorte = window.prompt('Informe a data da morte (YYYY-MM-DD):', formatarDataLocal());
         if (!dataMorte) return;
         if (!window.confirm(`Confirmar baixa por morte do animal ${animal.brincoRgd}?`)) return;
 
@@ -95,6 +108,24 @@ export const RebanhoPage = () => {
             console.error(err);
             const mensagem = isAxiosError<{ mensagem?: string }>(err) ? err.response?.data?.mensagem : undefined;
             setErroBanco(mensagem || 'Erro ao registrar morte do animal.');
+        }
+    };
+
+    const reverterMorte = async (animal: Animal) => {
+        const confirmado = window.confirm(
+            `Reverter a baixa por morte do animal ${animal.brincoRgd}?\n\n` +
+            'Use esta opção somente para corrigir uma morte registrada por engano.\n\n' +
+            'O animal voltará para ATIVO e permanecerá no mesmo lote.'
+        );
+        if (!confirmado) return;
+
+        try {
+            await rebanhoService.reverterMorte(animal.id);
+            await carregarDados();
+        } catch (err: unknown) {
+            console.error(err);
+            const mensagem = isAxiosError<{ mensagem?: string }>(err) ? err.response?.data?.mensagem : undefined;
+            setErroBanco(mensagem || 'Erro ao reverter a morte do animal.');
         }
     };
 
@@ -135,10 +166,10 @@ export const RebanhoPage = () => {
                 <div>
                     <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
                         <Users className="w-6 h-6 text-emerald-500" />
-                        GESTÃO DE REBANHO E LOTES
+                        GESTÃO DE REBANHO
                     </h1>
                     <p className="text-stone-400 text-xs uppercase tracking-widest mt-1">
-                        Rastreabilidade Individual • Ciclo Pecuário
+                        Rastreabilidade Individual
                     </p>
                 </div>
                 <button
@@ -185,6 +216,17 @@ export const RebanhoPage = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <h2 className="text-sm font-bold uppercase tracking-wider text-white">Inventário Individual de Brincos</h2>
                     <div className="flex items-center gap-2">
+                        <span className="text-xs text-stone-400">Filtrar Status:</span>
+                        <select
+                            value={filtroStatus ?? ''}
+                            onChange={(e) => setFiltroStatus((e.target.value || undefined) as StatusAnimal | undefined)}
+                            className="bg-stone-950 border border-stone-800 text-stone-200 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500"
+                        >
+                            <option value="">Ativos + mortes recentes</option>
+                            <option value="ATIVO">Ativos</option>
+                            <option value="MORTO">Mortos</option>
+                            <option value="VENDIDO">Vendidos</option>
+                        </select>
                         <span className="text-xs text-stone-400">Filtrar Categoria:</span>
                         <select
                             value={filtroCategoria}
@@ -220,7 +262,7 @@ export const RebanhoPage = () => {
                         {animaisFiltrados.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="text-center py-8 text-stone-500 font-mono">
-                                    Nenhum animal cadastrado ou endpoint `/api/v1/animais` indisponível.
+                                    Nenhum animal encontrado para os filtros selecionados.
                                 </td>
                             </tr>
                         ) : (
@@ -237,11 +279,7 @@ export const RebanhoPage = () => {
                                         {animal?.pesoAtual == null ? 'Sem pesagem' : `${animal.pesoAtual} kg`}
                                     </td>
                                     <td className="px-4 py-3.5">
-                      <span className={`px-2.5 py-1 rounded-full font-mono text-[10px] border ${
-                          animal?.status === 'MORTO'
-                              ? 'bg-stone-950 border-stone-700 text-stone-400'
-                              : 'bg-emerald-950/60 border-emerald-800 text-emerald-400'
-                      }`}>
+                      <span className={`px-2.5 py-1 rounded-full font-mono text-[10px] border ${statusClasses[animal.status]}`}>
                         {animal?.status || 'ATIVO'}
                       </span>
                                     </td>
@@ -274,6 +312,16 @@ export const RebanhoPage = () => {
                                                         <Trash2 className="w-3.5 h-3.5" />
                                                     </button>
                                                 </>
+                                            )}
+                                            {animal.status === 'MORTO' && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => reverterMorte(animal)}
+                                                    title="Reverter morte"
+                                                    className="p-2 bg-stone-950 border border-stone-800 text-stone-300 hover:text-white hover:border-emerald-600 rounded-lg transition-colors cursor-pointer"
+                                                >
+                                                    <RotateCcw className="w-3.5 h-3.5" />
+                                                </button>
                                             )}
                                         </div>
                                     </td>

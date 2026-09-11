@@ -72,7 +72,6 @@ public class Animal {
             throw new IllegalStateException("Somente animais ativos podem receber baixa por morte.");
         }
         this.status = Status.MORTO;
-        this.loteId = null;
         this.dataMorte = dataMorte;
     }
 
@@ -114,7 +113,6 @@ public class Animal {
         }
         this.status = Status.ATIVO;
         this.dataMorte = null;
-        this.loteId = null;
     }
 
     public void reverterVenda() {

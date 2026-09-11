@@ -1,6 +1,7 @@
 package com.br.infra.persistence.adapter;
 
 import com.br.core.domain.enums.Categoria;
+import com.br.core.domain.enums.Status;
 import com.br.core.domain.model.Animal;
 import com.br.core.domain.model.Pagina;
 import com.br.infra.persistence.entity.AnimalEntity;
@@ -59,7 +60,7 @@ public class AnimalRepositoryImpl implements AnimalRepository {
 
     @Override
     public List<Animal> buscarPorLote(UUID loteId) {
-        return springDataRepository.findByLoteAtual(loteId)
+        return springDataRepository.findByLoteAtualAndStatus(loteId, Status.ATIVO.name())
                 .stream()
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
@@ -91,6 +92,18 @@ public class AnimalRepositoryImpl implements AnimalRepository {
         PageRequest pageRequest = PageRequest.of(pagina, tamanho);
         Page<AnimalEntity> pageResult = springDataRepository.buscarAnimaisVisiveis(LocalDate.now().minusMonths(12), pageRequest);
 
+        return paraPagina(pageResult);
+    }
+
+    @Override
+    public Pagina<Animal> buscarPorStatusPaginado(Status status, int pagina, int tamanho) {
+        PageRequest pageRequest = PageRequest.of(pagina, tamanho);
+        Page<AnimalEntity> pageResult = springDataRepository.findByStatus(status.name(), pageRequest);
+
+        return paraPagina(pageResult);
+    }
+
+    private Pagina<Animal> paraPagina(Page<AnimalEntity> pageResult) {
         List<Animal> animais = pageResult.getContent().stream()
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
