@@ -24,7 +24,6 @@ public class SecurityFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        // Libera a rota de login para não passar pelas regras do filtro
         return "/api/v1/auth/login".equals(request.getRequestURI());
     }
 
