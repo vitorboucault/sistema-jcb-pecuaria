@@ -6,10 +6,18 @@ const pageSource = fs.readFileSync(new URL('../src/features/rebanho/pages/Rebanh
 const serviceSource = fs.readFileSync(new URL('../src/features/rebanho/api/rebanhoService.ts', import.meta.url), 'utf8');
 
 describe('contrato do Rebanho', () => {
+    it('@spec:AC-301 carrega matrizes ativas independente do filtro da tabela', () => {
+        assert.match(pageSource, /const \[matrizes, setMatrizes\]/);
+        assert.match(pageSource, /rebanhoService\.listarMatrizes\(\)/);
+        assert.match(pageSource, /animal\.sexo === 'FEMEA'/);
+        assert.match(pageSource, /animal\.categoria === 'VACA' \|\| animal\.categoria === 'NOVILHA'/);
+        assert.match(pageSource, /matrizes=\{matrizes\}/);
+    });
+
     it('@spec:AC-205 envia status por params e chama a reversão de morte', () => {
         assert.match(serviceSource, /listarAnimais\(status\?: StatusAnimal\)/);
         assert.match(serviceSource, /api\.get<Pagina<Animal>>\('v1\/animais', \{\s*params:/s);
-        assert.match(serviceSource, /tamanho: 100/);
+        assert.match(serviceSource, /listarAnimaisPaginado\(status\?: StatusAnimal, pagina = 0, tamanho = 100\)/);
         assert.match(serviceSource, /\.\.\.\(status \? \{ status \} : \{\}\)/);
         assert.match(serviceSource, /reverterMorte\(id: string\)/);
         assert.match(serviceSource, /api\.post\(`v1\/animais\/\$\{id\}\/reverter-morte`\)/);
@@ -49,5 +57,34 @@ describe('contrato do Rebanho', () => {
     it('@spec:AC-211 não adiciona reversão de venda nem dependência de frontend', () => {
         assert.doesNotMatch(pageSource, /reverterVenda/);
         assert.doesNotMatch(serviceSource, /reverterVenda/);
+    });
+
+    it('@spec:AC-312 sincroniza matrizes após cada mutação bem-sucedida do rebanho', () => {
+        assert.match(pageSource, /const recarregarDados = useCallback\(async \(\) => \{\s*await Promise\.all\(\[carregarDados\(\), carregarMatrizes\(\)\]\);/s);
+
+        for (const mutacao of [
+            'handleCadastrarAnimal',
+            'salvarEdicao',
+            'registrarMorte',
+            'reverterMorte',
+            'excluirAnimal',
+        ]) {
+            const inicio = pageSource.indexOf(`const ${mutacao}`);
+            const fim = pageSource.indexOf('\n    };', inicio);
+            assert.notEqual(inicio, -1, `mutação ausente: ${mutacao}`);
+            assert.notEqual(fim, -1, `fim ausente: ${mutacao}`);
+            assert.match(pageSource.slice(inicio, fim), /await recarregarDados\(\);/);
+        }
+
+        assert.match(pageSource, /onSuccess=\{recarregarDados\}/);
+    });
+
+    it('@spec:AC-313 disponibiliza matrizes elegíveis de todas as páginas', () => {
+        assert.match(serviceSource, /async listarMatrizes\(\): Promise<Animal\[\]>/);
+        assert.match(serviceSource, /primeiraPagina\.totalPaginas/);
+        assert.match(serviceSource, /Array\.from\(\s*\{ length: Math\.max\(primeiraPagina\.totalPaginas - 1, 0\) \}/s);
+        assert.match(serviceSource, /this\.listarAnimaisPaginado\('ATIVO', indice \+ 1, primeiraPagina\.tamanhoPagina\)/);
+        assert.match(serviceSource, /\[primeiraPagina, \.\.\.paginasRestantes\]\.flatMap/);
+        assert.match(pageSource, /rebanhoService\.listarMatrizes\(\)/);
     });
 });

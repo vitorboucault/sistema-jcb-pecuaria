@@ -10,6 +10,9 @@ cd "${PROJECT_ROOT}/frontend"
 echo "==> [Frontend] Executando npm ci..."
 npm ci
 
+echo "==> [Frontend] Executando testes..."
+npm run test
+
 echo "==> [Frontend] Executando linter..."
 npm run lint
 

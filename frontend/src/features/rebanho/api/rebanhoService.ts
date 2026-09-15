@@ -2,14 +2,32 @@ import { api } from '../../../shared/api/client';
 import type { Animal, AtualizarAnimalInput, CadastrarAnimalInput, Lote, Pagina, ResumoRebanho, StatusAnimal } from '../types';
 
 export const rebanhoService = {
-    async listarAnimais(status?: StatusAnimal): Promise<Animal[]> {
+    async listarAnimaisPaginado(status?: StatusAnimal, pagina = 0, tamanho = 100): Promise<Pagina<Animal>> {
         const response = await api.get<Pagina<Animal>>('v1/animais', {
             params: {
-                tamanho: 100,
+                pagina,
+                tamanho,
                 ...(status ? { status } : {}),
             },
         });
-        return response.data.conteudo;
+        return response.data;
+    },
+
+    async listarAnimais(status?: StatusAnimal): Promise<Animal[]> {
+        const pagina = await this.listarAnimaisPaginado(status);
+        return pagina.conteudo;
+    },
+
+    async listarMatrizes(): Promise<Animal[]> {
+        const primeiraPagina = await this.listarAnimaisPaginado('ATIVO');
+        const paginasRestantes = await Promise.all(
+            Array.from(
+                { length: Math.max(primeiraPagina.totalPaginas - 1, 0) },
+                (_, indice) => this.listarAnimaisPaginado('ATIVO', indice + 1, primeiraPagina.tamanhoPagina),
+            ),
+        );
+
+        return [primeiraPagina, ...paginasRestantes].flatMap((pagina) => pagina.conteudo);
     },
 
     async obterResumo(): Promise<ResumoRebanho> {

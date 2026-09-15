@@ -21,6 +21,7 @@ const formatarDataLocal = (data: Date = new Date()): string => {
 
 export const RebanhoPage = () => {
     const [animais, setAnimais] = useState<Animal[]>([]);
+    const [matrizes, setMatrizes] = useState<Animal[]>([]);
     const [lotes, setLotes] = useState<Lote[]>([]);
     const [resumo, setResumo] = useState<ResumoRebanho | null>(null);
     const [loading, setLoading] = useState(true);
@@ -62,14 +63,37 @@ export const RebanhoPage = () => {
         }
     }, [filtroStatus]);
 
+    const carregarMatrizes = useCallback(async () => {
+        try {
+            const animaisAtivos = await rebanhoService.listarMatrizes();
+            setMatrizes(animaisAtivos.filter((animal) =>
+                animal.status === 'ATIVO' &&
+                animal.sexo === 'FEMEA' &&
+                (animal.categoria === 'VACA' || animal.categoria === 'NOVILHA')
+            ));
+        } catch (err: unknown) {
+            console.error('Falha ao carregar matrizes elegíveis:', err);
+            setMatrizes([]);
+        }
+    }, []);
+
+    const recarregarDados = useCallback(async () => {
+        await Promise.all([carregarDados(), carregarMatrizes()]);
+    }, [carregarDados, carregarMatrizes]);
+
     useEffect(() => {
         const timeout = window.setTimeout(() => void carregarDados(), 0);
         return () => window.clearTimeout(timeout);
     }, [carregarDados]);
 
+    useEffect(() => {
+        const timeout = window.setTimeout(() => void carregarMatrizes(), 0);
+        return () => window.clearTimeout(timeout);
+    }, [carregarMatrizes]);
+
     const handleCadastrarAnimal = async (dados: CadastrarAnimalInput) => {
         await rebanhoService.cadastrarAnimal(dados);
-        await carregarDados();
+        await recarregarDados();
     };
 
     const abrirEdicao = (animal: Animal) => {
@@ -88,7 +112,7 @@ export const RebanhoPage = () => {
         try {
             await rebanhoService.atualizarAnimal(animalEmEdicao.id, formEdicao);
             setAnimalEmEdicao(null);
-            await carregarDados();
+            await recarregarDados();
         } catch (err: unknown) {
             console.error(err);
             const mensagem = isAxiosError<{ mensagem?: string }>(err) ? err.response?.data?.mensagem : undefined;
@@ -103,7 +127,7 @@ export const RebanhoPage = () => {
 
         try {
             await rebanhoService.registrarMorte(animal.id, dataMorte);
-            await carregarDados();
+            await recarregarDados();
         } catch (err: unknown) {
             console.error(err);
             const mensagem = isAxiosError<{ mensagem?: string }>(err) ? err.response?.data?.mensagem : undefined;
@@ -121,7 +145,7 @@ export const RebanhoPage = () => {
 
         try {
             await rebanhoService.reverterMorte(animal.id);
-            await carregarDados();
+            await recarregarDados();
         } catch (err: unknown) {
             console.error(err);
             const mensagem = isAxiosError<{ mensagem?: string }>(err) ? err.response?.data?.mensagem : undefined;
@@ -134,7 +158,7 @@ export const RebanhoPage = () => {
 
         try {
             await rebanhoService.excluirAnimal(animal.id);
-            await carregarDados();
+            await recarregarDados();
         } catch (err: unknown) {
             console.error(err);
             const mensagem = isAxiosError<{ mensagem?: string }>(err) ? err.response?.data?.mensagem : undefined;
@@ -336,18 +360,10 @@ export const RebanhoPage = () => {
             {/* Modal de Cadastro */}
             <AnimalModalForm
                 lotes={listaLotesSegura}
-                matrizes={listaAnimaisSegura.filter(
-                    (animal) =>
-                        animal.sexo === 'FEMEA' &&
-                        animal.status === 'ATIVO' &&
-                        (
-                            animal.categoria === 'VACA' ||
-                            animal.categoria === 'NOVILHA'
-                        )
-                )}
+                matrizes={matrizes}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onSuccess={carregarDados}
+                onSuccess={recarregarDados}
                 onCadastrar={handleCadastrarAnimal}
             />
 

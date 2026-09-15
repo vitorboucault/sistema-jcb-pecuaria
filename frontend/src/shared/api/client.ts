@@ -27,10 +27,9 @@ api.interceptors.response.use(
     (error: unknown) => {
         if (axios.isAxiosError(error)) {
             const status = error.response?.status;
-            const hasBearerToken = Boolean(error.config?.headers?.Authorization);
             const isLoginRoute = window.location.pathname === '/login';
 
-            if (status === 401 && hasBearerToken && !isLoginRoute) {
+            if (status === 401 && !isLoginRoute) {
                 localStorage.removeItem('@jcb:user');
                 window.location.replace('/login');
             }

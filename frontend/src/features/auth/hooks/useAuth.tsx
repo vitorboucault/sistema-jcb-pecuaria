@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { authService } from '../api/authService';
+import { getTokenExpiration, readStoredSession } from '../session';
 import type { UserSession } from '../types';
 
 interface AuthContextData {
@@ -14,18 +15,33 @@ const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<UserSession | null>(() => {
-        const storedUser = localStorage.getItem('@jcb:user');
-        if (!storedUser) {
-            return null;
-        }
-        try {
-            return JSON.parse(storedUser) as UserSession;
-        } catch {
-            localStorage.removeItem('@jcb:user');
-            return null;
-        }
+        return readStoredSession(localStorage) as UserSession | null;
     });
     const isLoading = false;
+
+    const logout = useCallback((): void => {
+        localStorage.removeItem('@jcb:user');
+        setUser(null);
+    }, []);
+
+    useEffect(() => {
+        if (!user) return undefined;
+
+        const expiration = getTokenExpiration(user.token);
+        if (expiration === null) {
+            const timeoutId = window.setTimeout(logout, 0);
+            return () => window.clearTimeout(timeoutId);
+        }
+
+        const delay = expiration * 1000 - Date.now();
+        if (delay <= 0) {
+            const timeoutId = window.setTimeout(logout, 0);
+            return () => window.clearTimeout(timeoutId);
+        }
+
+        const timeoutId = window.setTimeout(logout, delay);
+        return () => window.clearTimeout(timeoutId);
+    }, [logout, user]);
 
     const login = async (usuario: string, senha: string): Promise<void> => {
         const resposta = await authService.login({ login: usuario, senha });
@@ -37,11 +53,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         localStorage.setItem('@jcb:user', JSON.stringify(session));
         setUser(session);
-    };
-
-    const logout = (): void => {
-        localStorage.removeItem('@jcb:user');
-        setUser(null);
     };
 
     return (

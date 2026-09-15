@@ -32,7 +32,7 @@ class RegistrarNascimentoUseCaseTest {
     private RegistrarNascimentoUseCase useCase;
 
     @Test
-    @DisplayName("Deve registrar nascimento de bezerro macho e alocar no lote atual da mãe")
+    @DisplayName("@spec:AC-310 Deve registrar nascimento de bezerro macho e alocar no lote atual da mãe")
     void deveRegistrarNascimentoComSucesso() {
         UUID maeId = UUID.randomUUID();
         UUID loteMae = UUID.randomUUID();
@@ -77,7 +77,7 @@ class RegistrarNascimentoUseCaseTest {
     }
 
     @Test
-    @DisplayName("Deve barrar registro se a mãe informada for do sexo macho")
+    @DisplayName("@spec:AC-311 Deve barrar registro se a mãe informada for do sexo macho")
     void deveBarrarMaeMacho() {
         UUID touroId = UUID.randomUUID();
         Animal touro = new Animal(touroId, "TOURO-01", LocalDate.now().minusYears(5), Sexo.MACHO, Categoria.TOURO, Status.ATIVO, null, null);
@@ -92,5 +92,49 @@ class RegistrarNascimentoUseCaseTest {
         assertThatThrownBy(() -> useCase.executar(command))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("O animal vinculado como mae nao é uma fêmea.");
+
+        verify(animalRepository, never()).salvar(any());
+    }
+
+    @Test
+    @DisplayName("@spec:AC-311 Deve barrar registro se a mãe informada estiver inativa")
+    void deveBarrarMaeInativa() {
+        UUID maeId = UUID.randomUUID();
+        Animal vacaInativa = new Animal(maeId, "MATRIZ-INATIVA", LocalDate.now().minusYears(4),
+                Sexo.FEMEA, Categoria.VACA, Status.MORTO, null, null);
+
+        when(animalRepository.buscarPorBrinco("BEZ-003")).thenReturn(Optional.empty());
+        when(animalRepository.buscarPorId(maeId)).thenReturn(Optional.of(vacaInativa));
+
+        RegistrarNascimentoCommand command = new RegistrarNascimentoCommand(
+                "BEZ-003", LocalDate.now(), Sexo.FEMEA, maeId
+        );
+
+        assertThatThrownBy(() -> useCase.executar(command))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("O animal não está ativo");
+
+        verify(animalRepository, never()).salvar(any());
+    }
+
+    @Test
+    @DisplayName("@spec:AC-311 Deve barrar registro se a mãe informada não for VACA ou NOVILHA")
+    void deveBarrarMaeDeCategoriaInelegivel() {
+        UUID maeId = UUID.randomUUID();
+        Animal bezerra = new Animal(maeId, "MATRIZ-JOVEM", LocalDate.now().minusMonths(10),
+                Sexo.FEMEA, Categoria.BEZERRA, Status.ATIVO, null, null);
+
+        when(animalRepository.buscarPorBrinco("BEZ-004")).thenReturn(Optional.empty());
+        when(animalRepository.buscarPorId(maeId)).thenReturn(Optional.of(bezerra));
+
+        RegistrarNascimentoCommand command = new RegistrarNascimentoCommand(
+                "BEZ-004", LocalDate.now(), Sexo.MACHO, maeId
+        );
+
+        assertThatThrownBy(() -> useCase.executar(command))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("O animal informado não é uma matriz elegível.");
+
+        verify(animalRepository, never()).salvar(any());
     }
 }
