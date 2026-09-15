@@ -28,8 +28,7 @@
 - Arquivos: frontend/src/features/rebanho/pages/RebanhoPage.tsx, frontend/tests/rebanho-contract.test.js
 - Notas: Reutilizar o fluxo de recarga existente; não criar estado global nem endpoint novo. O teste deve cobrir a atualização da lista após os caminhos de sucesso.
 
-## T-403 — Remover o limite arbitrário da carga de matrizes [pendente]
-
+## T-403 — Remover o limite arbitrário da carga de matrizes [concluida]
 - Refs: US-307, AC-313
 - Arquivos: frontend/src/features/rebanho/api/rebanhoService.ts, frontend/src/features/rebanho/pages/RebanhoPage.tsx, frontend/tests/rebanho-contract.test.js
 - Notas: Implementar paginação somente para a consulta de matrizes, preservando a paginação/contrato da tabela principal. Depende da decisão Q-401.
