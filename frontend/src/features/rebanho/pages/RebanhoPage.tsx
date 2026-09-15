@@ -77,6 +77,10 @@ export const RebanhoPage = () => {
         }
     }, []);
 
+    const recarregarDados = useCallback(async () => {
+        await Promise.all([carregarDados(), carregarMatrizes()]);
+    }, [carregarDados, carregarMatrizes]);
+
     useEffect(() => {
         const timeout = window.setTimeout(() => void carregarDados(), 0);
         return () => window.clearTimeout(timeout);
@@ -89,7 +93,7 @@ export const RebanhoPage = () => {
 
     const handleCadastrarAnimal = async (dados: CadastrarAnimalInput) => {
         await rebanhoService.cadastrarAnimal(dados);
-        await carregarDados();
+        await recarregarDados();
     };
 
     const abrirEdicao = (animal: Animal) => {
@@ -108,7 +112,7 @@ export const RebanhoPage = () => {
         try {
             await rebanhoService.atualizarAnimal(animalEmEdicao.id, formEdicao);
             setAnimalEmEdicao(null);
-            await carregarDados();
+            await recarregarDados();
         } catch (err: unknown) {
             console.error(err);
             const mensagem = isAxiosError<{ mensagem?: string }>(err) ? err.response?.data?.mensagem : undefined;
@@ -123,7 +127,7 @@ export const RebanhoPage = () => {
 
         try {
             await rebanhoService.registrarMorte(animal.id, dataMorte);
-            await carregarDados();
+            await recarregarDados();
         } catch (err: unknown) {
             console.error(err);
             const mensagem = isAxiosError<{ mensagem?: string }>(err) ? err.response?.data?.mensagem : undefined;
@@ -141,7 +145,7 @@ export const RebanhoPage = () => {
 
         try {
             await rebanhoService.reverterMorte(animal.id);
-            await carregarDados();
+            await recarregarDados();
         } catch (err: unknown) {
             console.error(err);
             const mensagem = isAxiosError<{ mensagem?: string }>(err) ? err.response?.data?.mensagem : undefined;
@@ -154,7 +158,7 @@ export const RebanhoPage = () => {
 
         try {
             await rebanhoService.excluirAnimal(animal.id);
-            await carregarDados();
+            await recarregarDados();
         } catch (err: unknown) {
             console.error(err);
             const mensagem = isAxiosError<{ mensagem?: string }>(err) ? err.response?.data?.mensagem : undefined;
@@ -359,7 +363,7 @@ export const RebanhoPage = () => {
                 matrizes={matrizes}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onSuccess={carregarDados}
+                onSuccess={recarregarDados}
                 onCadastrar={handleCadastrarAnimal}
             />
 

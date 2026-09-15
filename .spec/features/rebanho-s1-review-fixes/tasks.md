@@ -18,8 +18,7 @@
     (atalho: `onp-spec tarefa <feature> <T-xxx> <status>`)
 -->
 
-## T-401 — Corrigir elegibilidade da mãe no caso de uso [pendente]
-
+## T-401 — Corrigir elegibilidade da mãe no caso de uso [concluida]
 - Refs: US-305, AC-310, AC-311
 - Arquivos: usecase/src/main/java/com/br/usecase/manejo/RegistrarNascimentoUseCase.java, usecase/src/test/java/com/br/usecase/manejo/RegistrarNascimentoUseCaseTest.java
 - Notas: Corrigir a combinação lógica da validação e cobrir mãe válida, macho, inativa e categoria inelegível. Não criar regra no controller.

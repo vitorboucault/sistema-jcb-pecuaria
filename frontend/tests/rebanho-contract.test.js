@@ -58,4 +58,24 @@ describe('contrato do Rebanho', () => {
         assert.doesNotMatch(pageSource, /reverterVenda/);
         assert.doesNotMatch(serviceSource, /reverterVenda/);
     });
+
+    it('@spec:AC-312 sincroniza matrizes após cada mutação bem-sucedida do rebanho', () => {
+        assert.match(pageSource, /const recarregarDados = useCallback\(async \(\) => \{\s*await Promise\.all\(\[carregarDados\(\), carregarMatrizes\(\)\]\);/s);
+
+        for (const mutacao of [
+            'handleCadastrarAnimal',
+            'salvarEdicao',
+            'registrarMorte',
+            'reverterMorte',
+            'excluirAnimal',
+        ]) {
+            const inicio = pageSource.indexOf(`const ${mutacao}`);
+            const fim = pageSource.indexOf('\n    };', inicio);
+            assert.notEqual(inicio, -1, `mutação ausente: ${mutacao}`);
+            assert.notEqual(fim, -1, `fim ausente: ${mutacao}`);
+            assert.match(pageSource.slice(inicio, fim), /await recarregarDados\(\);/);
+        }
+
+        assert.match(pageSource, /onSuccess=\{recarregarDados\}/);
+    });
 });
