@@ -1,0 +1,19 @@
+{
+  "testCommand": "./scripts/check-backend.sh && node --test --test-reporter=tap frontend/tests/*.test.js",
+  "reporter": "exitcode",
+  "testGlobs": [
+    "frontend/tests/**",
+    "usecase/src/test/**",
+    "application/src/test/**",
+    "core/src/test/**",
+    "infra/src/test/**",
+    "test/**",
+    "tests/**",
+    "src/**/*.test.*",
+    "src/**/*.spec.*",
+    "__tests__/**"
+  ],
+  "srcGlobs": [
+    "src/**"
+  ]
+}
