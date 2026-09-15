@@ -1,7 +1,7 @@
 # Spec: Correções da revisão do Rebanho S1
 
 > feature: rebanho-s1-review-fixes
-> status: rascunho
+> status: auditada
 
 <!--
   Como ler este arquivo (o formato é verificado por `onp-spec audit`):
