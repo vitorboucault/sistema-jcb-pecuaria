@@ -23,8 +23,7 @@
 - Arquivos: usecase/src/main/java/com/br/usecase/manejo/RegistrarNascimentoUseCase.java, usecase/src/test/java/com/br/usecase/manejo/RegistrarNascimentoUseCaseTest.java
 - Notas: Corrigir a combinação lógica da validação e cobrir mãe válida, macho, inativa e categoria inelegível. Não criar regra no controller.
 
-## T-402 — Sincronizar matrizes após mutações do rebanho [pendente]
-
+## T-402 — Sincronizar matrizes após mutações do rebanho [concluida]
 - Refs: US-306, AC-312
 - Arquivos: frontend/src/features/rebanho/pages/RebanhoPage.tsx, frontend/tests/rebanho-contract.test.js
 - Notas: Reutilizar o fluxo de recarga existente; não criar estado global nem endpoint novo. O teste deve cobrir a atualização da lista após os caminhos de sucesso.

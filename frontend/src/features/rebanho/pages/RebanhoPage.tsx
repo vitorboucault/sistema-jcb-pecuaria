@@ -65,7 +65,7 @@ export const RebanhoPage = () => {
 
     const carregarMatrizes = useCallback(async () => {
         try {
-            const animaisAtivos = await rebanhoService.listarAnimais('ATIVO');
+            const animaisAtivos = await rebanhoService.listarMatrizes();
             setMatrizes(animaisAtivos.filter((animal) =>
                 animal.status === 'ATIVO' &&
                 animal.sexo === 'FEMEA' &&

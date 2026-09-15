@@ -8,7 +8,7 @@ const serviceSource = fs.readFileSync(new URL('../src/features/rebanho/api/reban
 describe('contrato do Rebanho', () => {
     it('@spec:AC-301 carrega matrizes ativas independente do filtro da tabela', () => {
         assert.match(pageSource, /const \[matrizes, setMatrizes\]/);
-        assert.match(pageSource, /rebanhoService\.listarAnimais\('ATIVO'\)/);
+        assert.match(pageSource, /rebanhoService\.listarMatrizes\(\)/);
         assert.match(pageSource, /animal\.sexo === 'FEMEA'/);
         assert.match(pageSource, /animal\.categoria === 'VACA' \|\| animal\.categoria === 'NOVILHA'/);
         assert.match(pageSource, /matrizes=\{matrizes\}/);
@@ -17,7 +17,7 @@ describe('contrato do Rebanho', () => {
     it('@spec:AC-205 envia status por params e chama a reversão de morte', () => {
         assert.match(serviceSource, /listarAnimais\(status\?: StatusAnimal\)/);
         assert.match(serviceSource, /api\.get<Pagina<Animal>>\('v1\/animais', \{\s*params:/s);
-        assert.match(serviceSource, /tamanho: 100/);
+        assert.match(serviceSource, /listarAnimaisPaginado\(status\?: StatusAnimal, pagina = 0, tamanho = 100\)/);
         assert.match(serviceSource, /\.\.\.\(status \? \{ status \} : \{\}\)/);
         assert.match(serviceSource, /reverterMorte\(id: string\)/);
         assert.match(serviceSource, /api\.post\(`v1\/animais\/\$\{id\}\/reverter-morte`\)/);
@@ -77,5 +77,14 @@ describe('contrato do Rebanho', () => {
         }
 
         assert.match(pageSource, /onSuccess=\{recarregarDados\}/);
+    });
+
+    it('@spec:AC-313 disponibiliza matrizes elegíveis de todas as páginas', () => {
+        assert.match(serviceSource, /async listarMatrizes\(\): Promise<Animal\[\]>/);
+        assert.match(serviceSource, /primeiraPagina\.totalPaginas/);
+        assert.match(serviceSource, /Array\.from\(\s*\{ length: Math\.max\(primeiraPagina\.totalPaginas - 1, 0\) \}/s);
+        assert.match(serviceSource, /this\.listarAnimaisPaginado\('ATIVO', indice \+ 1, primeiraPagina\.tamanhoPagina\)/);
+        assert.match(serviceSource, /\[primeiraPagina, \.\.\.paginasRestantes\]\.flatMap/);
+        assert.match(pageSource, /rebanhoService\.listarMatrizes\(\)/);
     });
 });
