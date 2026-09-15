@@ -71,13 +71,13 @@ describe('tratamento de JWT expirado', () => {
         assert.deepEqual(redirect, []);
     });
 
-    it('@spec:AC-003 preserva 401 de requisição sem Bearer token', async () => {
+    it('@spec:AC-003 @spec:AC-307 encerra a sessão para qualquer 401 fora do login', async () => {
         storage.setItem('@jcb:user', JSON.stringify({}));
 
         await assert.rejects(() => api.get('/publico'));
 
-        assert.equal(storage.has('@jcb:user'), true);
-        assert.deepEqual(redirect, []);
+        assert.equal(storage.has('@jcb:user'), false);
+        assert.deepEqual(redirect, ['/login']);
     });
 
     it('@spec:AC-004 preserva a sessão quando a API responde 403', async () => {

@@ -21,6 +21,7 @@ const formatarDataLocal = (data: Date = new Date()): string => {
 
 export const RebanhoPage = () => {
     const [animais, setAnimais] = useState<Animal[]>([]);
+    const [matrizes, setMatrizes] = useState<Animal[]>([]);
     const [lotes, setLotes] = useState<Lote[]>([]);
     const [resumo, setResumo] = useState<ResumoRebanho | null>(null);
     const [loading, setLoading] = useState(true);
@@ -62,10 +63,29 @@ export const RebanhoPage = () => {
         }
     }, [filtroStatus]);
 
+    const carregarMatrizes = useCallback(async () => {
+        try {
+            const animaisAtivos = await rebanhoService.listarAnimais('ATIVO');
+            setMatrizes(animaisAtivos.filter((animal) =>
+                animal.status === 'ATIVO' &&
+                animal.sexo === 'FEMEA' &&
+                (animal.categoria === 'VACA' || animal.categoria === 'NOVILHA')
+            ));
+        } catch (err: unknown) {
+            console.error('Falha ao carregar matrizes elegíveis:', err);
+            setMatrizes([]);
+        }
+    }, []);
+
     useEffect(() => {
         const timeout = window.setTimeout(() => void carregarDados(), 0);
         return () => window.clearTimeout(timeout);
     }, [carregarDados]);
+
+    useEffect(() => {
+        const timeout = window.setTimeout(() => void carregarMatrizes(), 0);
+        return () => window.clearTimeout(timeout);
+    }, [carregarMatrizes]);
 
     const handleCadastrarAnimal = async (dados: CadastrarAnimalInput) => {
         await rebanhoService.cadastrarAnimal(dados);
@@ -336,15 +356,7 @@ export const RebanhoPage = () => {
             {/* Modal de Cadastro */}
             <AnimalModalForm
                 lotes={listaLotesSegura}
-                matrizes={listaAnimaisSegura.filter(
-                    (animal) =>
-                        animal.sexo === 'FEMEA' &&
-                        animal.status === 'ATIVO' &&
-                        (
-                            animal.categoria === 'VACA' ||
-                            animal.categoria === 'NOVILHA'
-                        )
-                )}
+                matrizes={matrizes}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSuccess={carregarDados}

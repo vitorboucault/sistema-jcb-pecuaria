@@ -15,7 +15,7 @@ O domínio de **Rebanho** é responsável pelo ciclo de vida completo dos animai
   - `ATIVO`: Presente na fazenda e participando do manejo regular.
   - `MORTO`: Baixado por óbito.
   - `VENDIDO`: Comercializado.
-- `loteId`: Identificador do lote atual (opcional quando fora de lote, nulo após baixa).
+- `loteId`: Identificador do lote atual ou do lote preservado durante uma baixa por morte.
 - `dataNascimento`: Data de nascimento do animal.
 - `dataMorte`: Data em que ocorreu o óbito (preenchida apenas se `status == MORTO`).
 
@@ -50,7 +50,11 @@ O domínio de **Rebanho** é responsável pelo ciclo de vida completo dos animai
 ### 2.3. Baixa por Morte e Reversão
 - **Registrar Morte**:
   - Exige `status == ATIVO`.
-  - Altera status para `MORTO`, define `dataMorte` e desassocia do lote (`loteId = null`).
+  - Altera status para `MORTO`, define `dataMorte` e preserva o `loteId` para manter a rastreabilidade da perda no lote.
 - **Reverter Morte**:
   - Exige `status == MORTO`.
-  - Altera status de volta para `ATIVO`, limpa `dataMorte` e mantém `loteId = null` para realocação manual pelo operador.
+  - Altera status de volta para `ATIVO`, limpa `dataMorte` e preserva o mesmo `loteId`.
+
+Animais mortos mantêm o vínculo histórico com o lote, mas não participam da
+composição operacional do lote. Consultas de animais atuais do lote retornam
+somente animais com `status == ATIVO`.

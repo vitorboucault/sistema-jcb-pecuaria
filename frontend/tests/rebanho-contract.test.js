@@ -6,6 +6,14 @@ const pageSource = fs.readFileSync(new URL('../src/features/rebanho/pages/Rebanh
 const serviceSource = fs.readFileSync(new URL('../src/features/rebanho/api/rebanhoService.ts', import.meta.url), 'utf8');
 
 describe('contrato do Rebanho', () => {
+    it('@spec:AC-301 carrega matrizes ativas independente do filtro da tabela', () => {
+        assert.match(pageSource, /const \[matrizes, setMatrizes\]/);
+        assert.match(pageSource, /rebanhoService\.listarAnimais\('ATIVO'\)/);
+        assert.match(pageSource, /animal\.sexo === 'FEMEA'/);
+        assert.match(pageSource, /animal\.categoria === 'VACA' \|\| animal\.categoria === 'NOVILHA'/);
+        assert.match(pageSource, /matrizes=\{matrizes\}/);
+    });
+
     it('@spec:AC-205 envia status por params e chama a reversão de morte', () => {
         assert.match(serviceSource, /listarAnimais\(status\?: StatusAnimal\)/);
         assert.match(serviceSource, /api\.get<Pagina<Animal>>\('v1\/animais', \{\s*params:/s);

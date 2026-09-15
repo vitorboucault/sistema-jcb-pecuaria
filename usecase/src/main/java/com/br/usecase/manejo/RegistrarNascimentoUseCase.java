@@ -1,5 +1,6 @@
 package com.br.usecase.manejo;
 
+import com.br.core.domain.enums.Status;
 import com.br.usecase.dto.RegistrarNascimentoCommand;
 import com.br.core.domain.model.Animal;
 import com.br.core.domain.enums.Sexo;
@@ -26,9 +27,10 @@ public class RegistrarNascimentoUseCase {
         if (command.maeId() != null) {
             Animal mae = animalRepository.buscarPorId(command.maeId())
                     .orElseThrow(() -> new IllegalArgumentException("Matriz nao encontrada no sistema."));
-
             if (mae.getSexo() != Sexo.FEMEA) {
                 throw new IllegalArgumentException("O animal vinculado como mae nao é uma fêmea.");
+            } if (mae.getStatus() != Status.ATIVO){
+                throw new IllegalArgumentException("O animal não está ativo");
             }
             loteDaMae = mae.getLoteId();
         }
