@@ -34,8 +34,8 @@
 - Notas: Implementar paginação somente para a consulta de matrizes, preservando a paginação/contrato da tabela principal. Depende da decisão Q-401.
 
 ## T-404 — Eliminar recarga duplicada após cadastro [concluida]
-- Refs: US-306, AC-314
-- Arquivos: frontend/src/features/rebanho/pages/RebanhoPage.tsx, frontend/tests/rebanho-contract.test.js
+- Refs: US-309, AC-314
+- Arquivos: frontend/src/features/rebanho/pages/RebanhoPage.tsx, frontend/src/features/rebanho/components/AnimalModalForm.tsx, frontend/tests/rebanho-contract.test.js
 - Notas: Manter uma única chamada a `recarregarDados()` no sucesso de `handleCadastrarAnimal`, sem callback duplicado no formulário.
 
 ## T-405 — Preservar matrizes em falha de atualização [concluida]

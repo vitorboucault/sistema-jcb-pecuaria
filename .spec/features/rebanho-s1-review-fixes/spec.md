@@ -69,6 +69,11 @@ de mãe não dependa de um limite arbitrário da primeira página.
 - **Então** todas as matrizes elegíveis retornadas pela paginação ficam
   disponíveis para seleção
 
+### US-309 — Evitar recargas redundantes após cadastro
+
+Como produtor, quero que o cadastro de animal atualize os dados uma única vez,
+para evitar recargas redundantes após uma operação concluída com sucesso.
+
 #### AC-314 — Cadastro recarrega os dados uma única vez
 
 - **Dado** um cadastro de animal concluído com sucesso

@@ -75,7 +75,6 @@ describe('contrato do Rebanho', () => {
             assert.notEqual(fim, -1, `fim ausente: ${mutacao}`);
             assert.match(pageSource.slice(inicio, fim), /await recarregarDados\(\);/);
         }
-        assert.match(pageSource, /setErroMatrizes\(null\)/);
     });
 
     it('@spec:AC-313 disponibiliza matrizes elegíveis de todas as páginas', () => {
@@ -110,5 +109,7 @@ describe('contrato do Rebanho', () => {
         assert.doesNotMatch(matrizesSource, /catch[\s\S]*setMatrizes\(\[\]\)/);
         assert.match(matrizesSource, /setErroMatrizes\(null\)/);
         assert.match(matrizesSource, /catch[\s\S]*setErroMatrizes\(/);
+        assert.match(pageSource, /\{erroMatrizes && \(/);
+        assert.match(pageSource, /Não foi possível atualizar a lista de matrizes/);
     });
 });
