@@ -17,9 +17,9 @@ O domínio de **Rebanho** é responsável pelo ciclo de vida completo dos animai
   - `VENDIDO`: Comercializado.
 - `loteId`: Identificador do lote atual ou do lote preservado durante uma baixa por morte.
 - `origem`: Origem persistida do animal:
-  - `COMPRA`: Animal introduzido por uma compra operacional.
-  - `NASCIMENTO`: Animal registrado como nascido na fazenda.
-  - `DESCONHECIDO`: Não há informação histórica confiável sobre a origem.
+  - `COMPRA`: Animal cuja origem conhecida é aquisição por compra, independentemente de a compra ter sido registrada operacionalmente pelo sistema ou informada posteriormente como dado histórico.
+  - `NASCIMENTO`: Animal cuja origem conhecida é nascimento na propriedade.
+  - `DESCONHECIDO`: Origem não conhecida com segurança.
 - `dataNascimento`: Data de nascimento do animal.
 - `dataMorte`: Data em que ocorreu o óbito (preenchida apenas se `status == MORTO`).
 
@@ -49,8 +49,11 @@ O domínio de **Rebanho** é responsável pelo ciclo de vida completo dos animai
 
 A origem persistida é independente da operação de cadastro. Operações distintas
 podem convergir para a mesma origem quando o histórico disponível for o mesmo,
-mas somente a compra operacional gera efeitos financeiros ou comerciais de
-aquisição. O custo de aquisição pertence ao animal; custos futuros de lote
+e `origem = COMPRA` não significa, por si só, que uma compra operacional foi
+registrada pelo sistema nem que houve efeito financeiro ou comercial. Somente o
+fluxo operacional de compra pode gerar esses efeitos. Um animal antigo migrado
+do caderno pode ter `origem = COMPRA` sem gerar novo lançamento financeiro. O
+custo de aquisição pertence ao animal; custos futuros de lote
 devem ser compostos a partir dos animais, sem acumular compras diretamente em
 um campo mutável do lote.
 

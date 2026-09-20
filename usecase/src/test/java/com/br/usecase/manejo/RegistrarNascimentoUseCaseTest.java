@@ -33,7 +33,7 @@ class RegistrarNascimentoUseCaseTest {
     private RegistrarNascimentoUseCase useCase;
 
     @Test
-    @DisplayName("@spec:AC-319 Nascimento recebe origem própria e não gera efeito financeiro")
+    @DisplayName("@spec:AC-310 @spec:AC-319 Nascimento com matriz elegível recebe origem NASCIMENTO")
     void deveRegistrarNascimentoComSucesso() {
         UUID maeId = UUID.randomUUID();
         UUID loteMae = UUID.randomUUID();
