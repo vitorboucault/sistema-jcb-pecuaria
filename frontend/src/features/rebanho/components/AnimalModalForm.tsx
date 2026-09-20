@@ -7,7 +7,6 @@ interface AnimalModalFormProps {
     matrizes: Animal[];
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: () => void;
     onCadastrar: (dados: CadastrarAnimalInput) => Promise<unknown>;
 }
 
@@ -16,7 +15,6 @@ export const AnimalModalForm = ({
                                     matrizes,
                                     isOpen,
                                     onClose,
-                                    onSuccess,
                                     onCadastrar,
                                 }: AnimalModalFormProps) => {
     const [origem, setOrigem] = useState<'COMPRA' | 'NASCIMENTO'>('COMPRA');
@@ -66,7 +64,6 @@ export const AnimalModalForm = ({
                 maeId: maeId || undefined,
                 loteId,
             });
-            onSuccess();
             onClose();
         } catch (err: unknown) {
             console.error(err);

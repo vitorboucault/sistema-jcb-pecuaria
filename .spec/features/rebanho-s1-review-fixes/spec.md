@@ -69,6 +69,29 @@ de mãe não dependa de um limite arbitrário da primeira página.
 - **Então** todas as matrizes elegíveis retornadas pela paginação ficam
   disponíveis para seleção
 
+### US-309 — Evitar recargas redundantes após cadastro
+
+Como produtor, quero que o cadastro de animal atualize os dados uma única vez,
+para evitar recargas redundantes após uma operação concluída com sucesso.
+
+#### AC-314 — Cadastro recarrega os dados uma única vez
+
+- **Dado** um cadastro de animal concluído com sucesso
+- **Quando** `handleCadastrarAnimal` finalizar a chamada de cadastro
+- **Então** ele executa `recarregarDados()` exatamente uma vez, sem callback adicional de sucesso no componente do formulário
+
+### US-308 — Preservar matrizes quando a atualização falhar
+
+Como produtor, quero manter a última lista conhecida de matrizes quando uma
+atualização falhar, para continuar vendo opções utilizáveis e ser avisado da
+defasagem sem apagar os dados já carregados.
+
+#### AC-315 — Falha de matrizes preserva a lista e o aviso é recuperável
+
+- **Dado** uma lista de matrizes já carregada
+- **Quando** uma nova carga de matrizes falhar e depois outra carga for concluída com sucesso
+- **Então** a lista conhecida não é substituída por uma lista vazia, um aviso é exibido durante a falha e esse aviso é limpo após a carga bem-sucedida
+
 ## Fora de escopo
 
 - Nova API ou porta específica de matrizes.

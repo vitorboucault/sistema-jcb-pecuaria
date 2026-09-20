@@ -1,5 +1,5 @@
 {
-  "testCommand": "./scripts/check-backend.sh && node --test --test-reporter=tap frontend/tests/*.test.js",
+  "testCommand": "./scripts/check-all.sh",
   "reporter": "exitcode",
   "testGlobs": [
     "frontend/tests/**",
@@ -14,6 +14,10 @@
     "__tests__/**"
   ],
   "srcGlobs": [
-    "src/**"
+    "core/src/**",
+    "usecase/src/**",
+    "application/src/**",
+    "infra/src/**",
+    "frontend/src/**"
   ]
 }
