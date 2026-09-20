@@ -36,13 +36,21 @@ public class AnimalEntity {
     @Column(name = "data_morte")
     private LocalDate dataMorte;
 
+    @Column(nullable = false, length = 20)
+    private String origem;
+
     protected AnimalEntity() {}
 
     public AnimalEntity(UUID id, String brincoRgd, UUID loteAtual, LocalDate dataNascimento, String sexo, String categoriaAtual, String status, UUID maeId) {
-        this(id, brincoRgd, loteAtual, dataNascimento, sexo, categoriaAtual, status, maeId, null);
+        this(id, brincoRgd, loteAtual, dataNascimento, sexo, categoriaAtual, status, maeId, null, "DESCONHECIDO");
     }
 
     public AnimalEntity(UUID id, String brincoRgd, UUID loteAtual, LocalDate dataNascimento, String sexo, String categoriaAtual, String status, UUID maeId, LocalDate dataMorte) {
+        this(id, brincoRgd, loteAtual, dataNascimento, sexo, categoriaAtual, status, maeId, dataMorte, "DESCONHECIDO");
+    }
+
+    public AnimalEntity(UUID id, String brincoRgd, UUID loteAtual, LocalDate dataNascimento, String sexo,
+                        String categoriaAtual, String status, UUID maeId, LocalDate dataMorte, String origem) {
         this.id = id;
         this.brincoRgd = brincoRgd;
         this.loteAtual = loteAtual;
@@ -52,6 +60,7 @@ public class AnimalEntity {
         this.status = status;
         this.maeId = maeId;
         this.dataMorte = dataMorte;
+        this.origem = origem == null ? "DESCONHECIDO" : origem;
     }
 
     public UUID getId() { return id; }
@@ -65,6 +74,7 @@ public class AnimalEntity {
     public String getStatus() { return status; }
     public UUID getMaeId() { return maeId; }
     public LocalDate getDataMorte() { return dataMorte; }
+    public String getOrigem() { return origem; }
 
 
 }

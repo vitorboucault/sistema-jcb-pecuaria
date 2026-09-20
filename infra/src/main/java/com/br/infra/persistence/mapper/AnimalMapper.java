@@ -2,6 +2,7 @@ package com.br.infra.persistence.mapper;
 
 import com.br.core.domain.model.Animal;
 import com.br.core.domain.enums.Categoria;
+import com.br.core.domain.enums.OrigemAnimal;
 import com.br.core.domain.enums.Sexo;
 import com.br.core.domain.enums.Status;
 import com.br.infra.persistence.entity.AnimalEntity;
@@ -19,7 +20,8 @@ public class AnimalMapper {
                 animal.getCategoriaAtual().name(),
                 animal.getStatus().name(),
                 animal.getMaeId(),
-                animal.getDataMorte()
+                animal.getDataMorte(),
+                animal.getOrigem().name()
         );
     }
 
@@ -33,7 +35,8 @@ public class AnimalMapper {
                 Status.valueOf(entity.getStatus()),
                 entity.getMaeId(),
                 entity.getLoteAtual(),
-                entity.getDataMorte()
+                entity.getDataMorte(),
+                OrigemAnimal.valueOf(entity.getOrigem() == null ? OrigemAnimal.DESCONHECIDO.name() : entity.getOrigem())
         );
     }
 }

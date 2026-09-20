@@ -1,6 +1,7 @@
 package com.br.usecase.manejo;
 
 import com.br.core.domain.enums.CategoriaDespesa;
+import com.br.core.domain.enums.OrigemAnimal;
 import com.br.core.domain.enums.Status;
 import com.br.core.domain.enums.TipoDeCusto;
 import com.br.core.domain.model.Animal;
@@ -58,7 +59,9 @@ public class RegistrarCompraAnimalUseCase {
                 command.categoria(),
                 Status.ATIVO,
                 null,
-                command.loteId()
+                command.loteId(),
+                null,
+                OrigemAnimal.COMPRA
         );
 
         animalRepository.salvar(animal);

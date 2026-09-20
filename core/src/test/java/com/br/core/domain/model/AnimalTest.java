@@ -1,16 +1,47 @@
 package com.br.core.domain.model;
 
 import com.br.core.domain.enums.Categoria;
+import com.br.core.domain.enums.OrigemAnimal;
 import com.br.core.domain.enums.Sexo;
 import com.br.core.domain.enums.Status;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class AnimalTest {
+    @Test
+    @DisplayName("@spec:AC-316 OrigemAnimal possui somente os valores permitidos")
+    void origemAnimalPossuiConjuntoFechadoDeValores() {
+        assertThat(OrigemAnimal.values())
+                .containsExactly(OrigemAnimal.COMPRA, OrigemAnimal.NASCIMENTO, OrigemAnimal.DESCONHECIDO);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-317 Cadastro legado não transforma operação em origem")
+    void construtorLegadoUsaOrigemDesconhecida() {
+        Animal animal = animalComStatus(Status.ATIVO, null, null);
+
+        assertThat(animal.getOrigem()).isEqualTo(OrigemAnimal.DESCONHECIDO);
+        assertThat(Arrays.stream(OrigemAnimal.values()).map(Enum::name).toList())
+                .doesNotContain("CADASTRO_INICIAL");
+    }
+
+    @Test
+    @DisplayName("@spec:AC-318 Origem nula permanece desconhecida sem valor fictício")
+    void origemNulaEConvertidaParaDesconhecida() {
+        Animal animal = new Animal(
+                UUID.randomUUID(), "SEM-ORIGEM", LocalDate.now().minusYears(1), Sexo.MACHO,
+                Categoria.BEZERRO, Status.ATIVO, null, null, null, null
+        );
+
+        assertThat(animal.getOrigem()).isEqualTo(OrigemAnimal.DESCONHECIDO);
+        assertThat(animal.getDataMorte()).isNull();
+    }
+
     @Test
     @DisplayName("Deve desmamar um bezerro macho para garrote com mais de 5 meses")
     void deveDesmamarBezerroMacho() {

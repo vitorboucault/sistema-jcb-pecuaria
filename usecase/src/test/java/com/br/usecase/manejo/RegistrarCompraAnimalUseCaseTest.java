@@ -2,6 +2,7 @@ package com.br.usecase.manejo;
 
 import com.br.core.domain.enums.Categoria;
 import com.br.core.domain.enums.CategoriaDespesa;
+import com.br.core.domain.enums.OrigemAnimal;
 import com.br.core.domain.enums.Sexo;
 import com.br.core.domain.enums.Status;
 import com.br.core.domain.enums.TipoDeCusto;
@@ -43,7 +44,7 @@ class RegistrarCompraAnimalUseCaseTest {
     private RegistrarCompraAnimalUseCase useCase;
 
     @Test
-    @DisplayName("Deve registrar animal comprado como ativo com categoria e lote informados")
+    @DisplayName("@spec:AC-319 Compra recebe origem COMPRA e mantém o efeito financeiro separado")
     void deveRegistrarAnimalCompradoComSucesso() {
         UUID loteId = UUID.randomUUID();
         RegistrarCompraAnimalCommand command = new RegistrarCompraAnimalCommand(
@@ -74,6 +75,7 @@ class RegistrarCompraAnimalUseCaseTest {
         assertThat(animalSalvo.getStatus()).isEqualTo(Status.ATIVO);
         assertThat(animalSalvo.getMaeId()).isNull();
         assertThat(animalSalvo.getLoteId()).isEqualTo(loteId);
+        assertThat(animalSalvo.getOrigem()).isEqualTo(OrigemAnimal.COMPRA);
     }
 
     @Test

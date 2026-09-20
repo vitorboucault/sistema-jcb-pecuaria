@@ -1,6 +1,7 @@
 package com.br.usecase.manejo;
 
 import com.br.core.domain.enums.Categoria;
+import com.br.core.domain.enums.OrigemAnimal;
 import com.br.core.domain.enums.Sexo;
 import com.br.core.domain.enums.Status;
 import com.br.core.domain.model.Animal;
@@ -32,7 +33,7 @@ class RegistrarNascimentoUseCaseTest {
     private RegistrarNascimentoUseCase useCase;
 
     @Test
-    @DisplayName("@spec:AC-310 Deve registrar nascimento de bezerro macho e alocar no lote atual da mãe")
+    @DisplayName("@spec:AC-319 Nascimento recebe origem própria e não gera efeito financeiro")
     void deveRegistrarNascimentoComSucesso() {
         UUID maeId = UUID.randomUUID();
         UUID loteMae = UUID.randomUUID();
@@ -57,6 +58,7 @@ class RegistrarNascimentoUseCaseTest {
         assertThat(bezerroSalvo.getCategoriaAtual()).isEqualTo(Categoria.BEZERRO);
         assertThat(bezerroSalvo.getLoteId()).isEqualTo(loteMae);
         assertThat(bezerroSalvo.getMaeId()).isEqualTo(maeId);
+        assertThat(bezerroSalvo.getOrigem()).isEqualTo(OrigemAnimal.NASCIMENTO);
     }
 
     @Test

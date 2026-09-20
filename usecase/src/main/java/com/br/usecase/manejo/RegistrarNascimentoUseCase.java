@@ -1,6 +1,7 @@
 package com.br.usecase.manejo;
 
 import com.br.core.domain.enums.Categoria;
+import com.br.core.domain.enums.OrigemAnimal;
 import com.br.core.domain.model.Animal;
 import com.br.core.domain.enums.Sexo;
 import com.br.core.domain.enums.Status;
@@ -46,7 +47,8 @@ public class RegistrarNascimentoUseCase {
                 command.dataNascimento(),
                 command.sexo(),
                 command.maeId(),
-                loteDaMae
+                loteDaMae,
+                OrigemAnimal.NASCIMENTO
         );
         animalRepository.salvar(bezerro);
         return bezerro.getId();
