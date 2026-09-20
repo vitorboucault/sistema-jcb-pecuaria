@@ -75,8 +75,6 @@ describe('contrato do Rebanho', () => {
             assert.notEqual(fim, -1, `fim ausente: ${mutacao}`);
             assert.match(pageSource.slice(inicio, fim), /await recarregarDados\(\);/);
         }
-
-        assert.match(pageSource, /onSuccess=\{recarregarDados\}/);
     });
 
     it('@spec:AC-313 disponibiliza matrizes elegíveis de todas as páginas', () => {

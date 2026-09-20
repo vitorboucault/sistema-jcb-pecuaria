@@ -26,6 +26,7 @@ export const RebanhoPage = () => {
     const [resumo, setResumo] = useState<ResumoRebanho | null>(null);
     const [loading, setLoading] = useState(true);
     const [erroBanco, setErroBanco] = useState<string | null>(null);
+    const [erroMatrizes, setErroMatrizes] = useState<string | null>(null);
     const [filtroStatus, setFiltroStatus] = useState<StatusAnimal | undefined>(undefined);
     const [filtroCategoria, setFiltroCategoria] = useState<string>('TODOS');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -73,7 +74,9 @@ export const RebanhoPage = () => {
             ));
         } catch (err: unknown) {
             console.error('Falha ao carregar matrizes elegíveis:', err);
-            setMatrizes([]);
+            setErroMatrizes(
+                'Não foi possível atualizar a lista de matrizes. Os dados exibidos podem estar desatualizados.'
+            );
         }
     }, []);
 
@@ -208,6 +211,13 @@ export const RebanhoPage = () => {
                 <div className="p-4 bg-amber-950/40 border border-amber-700 text-amber-300 rounded-xl text-sm font-medium flex items-center gap-3">
                     <AlertCircle className="w-5 h-5 flex-shrink-0" />
                     <span>{erroBanco}</span>
+                </div>
+            )}
+
+            {erroMatrizes && (
+                <div className="p-4 bg-amber-950/40 border border-amber-700 text-amber-300 rounded-xl text-sm font-medium flex items-center gap-3">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                    <span>{erroMatrizes}</span>
                 </div>
             )}
 
@@ -363,7 +373,6 @@ export const RebanhoPage = () => {
                 matrizes={matrizes}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onSuccess={recarregarDados}
                 onCadastrar={handleCadastrarAnimal}
             />
 
