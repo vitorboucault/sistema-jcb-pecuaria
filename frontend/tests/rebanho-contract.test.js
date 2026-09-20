@@ -75,6 +75,7 @@ describe('contrato do Rebanho', () => {
             assert.notEqual(fim, -1, `fim ausente: ${mutacao}`);
             assert.match(pageSource.slice(inicio, fim), /await recarregarDados\(\);/);
         }
+        assert.match(pageSource, /setErroMatrizes\(null\)/);
     });
 
     it('@spec:AC-313 disponibiliza matrizes elegíveis de todas as páginas', () => {
@@ -84,5 +85,30 @@ describe('contrato do Rebanho', () => {
         assert.match(serviceSource, /this\.listarAnimaisPaginado\('ATIVO', indice \+ 1, primeiraPagina\.tamanhoPagina\)/);
         assert.match(serviceSource, /\[primeiraPagina, \.\.\.paginasRestantes\]\.flatMap/);
         assert.match(pageSource, /rebanhoService\.listarMatrizes\(\)/);
+    });
+
+    it('@spec:AC-314 recarrega o rebanho uma única vez após cadastrar', () => {
+        assert.doesNotMatch(pageSource, /onSuccess=\{recarregarDados\}/);
+
+        const inicio = pageSource.indexOf('const handleCadastrarAnimal');
+        const fim = pageSource.indexOf('\n    };', inicio);
+        assert.notEqual(inicio, -1, 'handleCadastrarAnimal ausente');
+        assert.notEqual(fim, -1, 'fim de handleCadastrarAnimal ausente');
+
+        const cadastroSource = pageSource.slice(inicio, fim);
+        assert.match(cadastroSource, /await rebanhoService\.cadastrarAnimal\(dados\);\s*await recarregarDados\(\);/s);
+        assert.equal([...cadastroSource.matchAll(/recarregarDados\(\)/g)].length, 1);
+    });
+
+    it('@spec:AC-315 preserva matrizes em erro e limpa o aviso após sucesso', () => {
+        const inicio = pageSource.indexOf('const carregarMatrizes');
+        const fim = pageSource.indexOf('\n    };', inicio);
+        assert.notEqual(inicio, -1, 'carregarMatrizes ausente');
+        assert.notEqual(fim, -1, 'fim de carregarMatrizes ausente');
+
+        const matrizesSource = pageSource.slice(inicio, fim);
+        assert.doesNotMatch(matrizesSource, /catch[\s\S]*setMatrizes\(\[\]\)/);
+        assert.match(matrizesSource, /setErroMatrizes\(null\)/);
+        assert.match(matrizesSource, /catch[\s\S]*setErroMatrizes\(/);
     });
 });

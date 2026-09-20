@@ -72,6 +72,7 @@ export const RebanhoPage = () => {
                 animal.sexo === 'FEMEA' &&
                 (animal.categoria === 'VACA' || animal.categoria === 'NOVILHA')
             ));
+            setErroMatrizes(null);
         } catch (err: unknown) {
             console.error('Falha ao carregar matrizes elegíveis:', err);
             setErroMatrizes(
