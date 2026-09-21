@@ -16,7 +16,7 @@ describe('contrato de sessão autenticada', () => {
     });
 
     it('@spec:AC-303 harness executa testes, lint e build', () => {
-        assert.match(packageSource, /"test": "node --test tests\/\*\.test\.js"/);
+        assert.match(packageSource, /"test": "node --test tests\/\*\.test\.js(?:[^"\\]|\\.)*"/);
         assert.match(harnessSource, /npm run test/);
         assert.match(harnessSource, /npm run lint/);
         assert.match(harnessSource, /npm run build/);
