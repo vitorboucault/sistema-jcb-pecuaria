@@ -4,11 +4,13 @@ import com.br.core.domain.enums.OrigemPesagem;
 import com.br.application.dto.AtualizarAnimalRequest;
 import com.br.application.dto.AnimalResumoDTO;
 import com.br.application.dto.AnimalInputDTO;
+import com.br.application.dto.RegistrarAnimalInicialRequest;
 import com.br.core.domain.enums.Categoria;
 import com.br.core.domain.enums.Status;
 import com.br.usecase.dto.AtualizarAnimalCommand;
 import com.br.usecase.dto.RegistrarCompraAnimalCommand;
 import com.br.usecase.dto.RegistrarMorteAnimalCommand;
+import com.br.usecase.dto.RegistrarAnimalInicialCommand;
 import com.br.usecase.dto.RegistrarNascimentoCommand;
 import com.br.usecase.dto.RegistrarPesagemCommand;
 import com.br.usecase.dto.ResumoRebanhoDTO;
@@ -17,6 +19,7 @@ import com.br.usecase.manejo.ExcluirAnimalUseCase;
 import com.br.usecase.manejo.ObterResumoRebanhoUseCase;
 import com.br.usecase.manejo.RegistrarCompraAnimalUseCase;
 import com.br.usecase.manejo.RegistrarNascimentoUseCase;
+import com.br.usecase.manejo.RegistrarAnimalInicialUseCase;
 import com.br.core.domain.model.Animal;
 import com.br.core.domain.model.Lote;
 import com.br.core.domain.model.Pagina;
@@ -56,6 +59,7 @@ public class AnimalController {
     private final AtualizarAnimalUseCase atualizarAnimalUseCase;
     private final ExcluirAnimalUseCase excluirAnimalUseCase;
     private final ReverterMorteAnimalUseCase reverterMorteAnimalUseCase;
+    private final RegistrarAnimalInicialUseCase registrarAnimalInicialUseCase;
 
     public AnimalController(
             RegistrarNascimentoUseCase registrarNascimentoUseCase,
@@ -69,7 +73,8 @@ public class AnimalController {
             ObterResumoRebanhoUseCase obterResumoRebanhoUseCase,
             AtualizarAnimalUseCase atualizarAnimalUseCase,
             ExcluirAnimalUseCase excluirAnimalUseCase,
-            ReverterMorteAnimalUseCase reverterMorteAnimalUseCase) {
+            ReverterMorteAnimalUseCase reverterMorteAnimalUseCase,
+            RegistrarAnimalInicialUseCase registrarAnimalInicialUseCase) {
         this.registrarNascimentoUseCase = registrarNascimentoUseCase;
         this.registrarPesagemUseCase = registrarPesagemUseCase;
         this.animalRepository = animalRepository;
@@ -82,6 +87,7 @@ public class AnimalController {
         this.atualizarAnimalUseCase = atualizarAnimalUseCase;
         this.excluirAnimalUseCase = excluirAnimalUseCase;
         this.reverterMorteAnimalUseCase = reverterMorteAnimalUseCase;
+        this.registrarAnimalInicialUseCase = registrarAnimalInicialUseCase;
     }
 
     @PostMapping
@@ -119,6 +125,21 @@ public class AnimalController {
 
             registrarPesagemInicial(animalId, dto.peso(), dto.dataEntrada());
         }
+        return ResponseEntity.status(201).body(animalId);
+    }
+
+    @PostMapping("/cadastrar")
+    public ResponseEntity<UUID> cadastrarAnimalInicial(
+            @Valid @RequestBody RegistrarAnimalInicialRequest request
+    ) {
+        UUID animalId = registrarAnimalInicialUseCase.executar(new RegistrarAnimalInicialCommand(
+                request.brincoRgd(),
+                request.dataNascimento(),
+                request.sexo(),
+                request.categoria(),
+                request.loteId(),
+                request.origem()
+        ));
         return ResponseEntity.status(201).body(animalId);
     }
 
