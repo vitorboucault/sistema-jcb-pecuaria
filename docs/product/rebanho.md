@@ -28,11 +28,11 @@ O domínio de **Rebanho** é responsável pelo ciclo de vida completo dos animai
 ## 2. Ciclo de Vida e Operações
 
 ```
-        [Nascimento / Compra]
+ [Cadastro inicial / Nascimento / Compra]
                  |
                  v
              +-------+
-             | ATIVO | <----+ (Reversão de Morte / Venda)
+             | ATIVO | <----+ (Reversão de Morte)
              +-------+      |
               |     |       |
       (Morte) |     | (Venda)
@@ -63,7 +63,7 @@ ser substituída por zero ou por uma data fictícia.
 ### 2.2. Manejo e Pesagens
 - **Pesagem Inicial**: Registrada com origem `OrigemPesagem.CADASTRO_INICIAL`.
 - **Pesagens Operacionais**: Registradas com origem `OrigemPesagem.OPERACIONAL` para acompanhamento de manejo e cálculo de Ganho Médio Diário (GMD).
-- **Movimentação de Lote**: `MovimentarAnimalUseCase` altera o `loteId` e registra o histórico na tabela de movimentações.
+- **Movimentação de Lote**: `MovimentarAnimalUseCase` altera o `loteId`, sem registrar histórico individual de transferências. A tabela `movimentacao_lote` representa a permanência de lotes em pastos, não a passagem de animais por lotes. O histórico individual ainda é uma evolução futura.
 
 ### 2.3. Baixa por Morte e Reversão
 - **Registrar Morte**:
