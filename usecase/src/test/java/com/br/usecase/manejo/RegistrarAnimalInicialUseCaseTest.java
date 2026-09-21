@@ -135,7 +135,7 @@ class RegistrarAnimalInicialUseCaseTest {
 
         assertThatThrownBy(() -> useCase.executar(command))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("O bezerro nao pode nascer no futuro.");
+                .hasMessage("A data de nascimento não pode ser futura.");
 
         verify(animalRepository, never()).salvar(any());
     }

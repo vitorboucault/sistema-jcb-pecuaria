@@ -52,7 +52,7 @@ public class RegistrarAnimalInicialUseCase {
             throw new IllegalArgumentException("A data de nascimento é obrigatória.");
         }
         if (command.dataNascimento().isAfter(LocalDate.now())) {
-            throw new IllegalArgumentException("O bezerro nao pode nascer no futuro.");
+            throw new IllegalArgumentException("A data de nascimento não pode ser futura.");
         }
         if (command.sexo() == null) {
             throw new IllegalArgumentException("O sexo é obrigatório.");
