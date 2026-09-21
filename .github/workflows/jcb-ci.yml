@@ -38,6 +38,9 @@ jobs:
       - name: Run backend tests
         run: ./scripts/check-backend.sh
 
+      - name: Run PostgreSQL migration tests (Docker required)
+        run: bash ./scripts/check-postgres.sh
+
   frontend-quality:
     name: Frontend / Quality
     runs-on: ubuntu-latest

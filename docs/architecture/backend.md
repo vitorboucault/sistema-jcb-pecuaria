@@ -76,3 +76,18 @@ Para garantir que o módulo `usecase` permaneça desacoplado do Spring:
   ```bash
   ./scripts/check-backend.sh
   ```
+
+### Regressões integradas do Rebanho
+
+`CadastroInicialHttpTest` usa o contexto completo, filtros de segurança, JWT,
+handler global e persistência H2. Não substitui os casos de uso por mocks.
+Cobre as três origens, ausência de efeitos financeiros/pesagem, dados inválidos,
+duplicidade e reversão de morte preservando lote posteriormente encerrado.
+
+`bash scripts/check-postgres.sh` executa `RebanhoPostgresIT` em PostgreSQL 17
+descartável via Testcontainers: migrations V1–V9 em banco vazio e V8–V9 com
+animais legados. Docker é obrigatório; sua ausência causa erro, não skip.
+Nenhuma conexão com o banco de uso real é utilizada. A execução completa
+`./scripts/check-all.sh` inclui esta etapa, assim como o job backend do CI.
+
+Os testes não introduzem a futura proibição de vínculos com lotes encerrados.
