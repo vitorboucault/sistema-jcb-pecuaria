@@ -208,7 +208,7 @@ class AnimalControllerTest {
     }
 
     @Test
-    @DisplayName("@spec:AC-325 Cadastro inicial pela API retorna 201 e delega os dados informados")
+    @DisplayName("@spec:AC-325 @spec:AC-334 Cadastro inicial pela API retorna 201 e delega os dados informados")
     void cadastrarAnimalInicialRetornaCreatedEDelegaCommand() throws Exception {
         UUID animalId = UUID.randomUUID();
         UUID loteId = UUID.randomUUID();
@@ -219,7 +219,7 @@ class AnimalControllerTest {
         mockMvc.perform(post("/api/v1/animais/cadastrar")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"brincoRgd":"VACA-001","dataNascimento":"2020-05-10","sexo":"FEMEA","categoria":"VACA","loteId":"%s","origem":"NASCIMENTO"}
+                                {"brincoRgd":"VACA-001","dataNascimento":"2020-05-10","sexo":"FEMEA","categoria":"VACA","loteId":"%s","origem":"NASCIMENTO","pesoAtual":385.5,"dataPesagem":"2026-09-20"}
                                 """.formatted(loteId)))
                 .andExpect(status().isCreated())
                 .andExpect(content().string("\"" + animalId + "\""));
@@ -233,6 +233,8 @@ class AnimalControllerTest {
         assertThat(command.categoria()).isEqualTo(Categoria.VACA);
         assertThat(command.loteId()).isEqualTo(loteId);
         assertThat(command.origem()).isEqualTo(OrigemAnimal.NASCIMENTO);
+        assertThat(command.pesoAtual()).isEqualTo(385.5);
+        assertThat(command.dataPesagem()).isEqualTo(LocalDate.of(2026, 9, 20));
     }
 
     @Test
@@ -257,7 +259,7 @@ class AnimalControllerTest {
     }
 
     @Test
-    @DisplayName("@spec:AC-327 Cadastro inicial pela API aceita lote ausente")
+    @DisplayName("@spec:AC-327 @spec:AC-335 Cadastro inicial pela API aceita lote e peso ausentes")
     void cadastrarAnimalInicialAceitaLoteAusente() throws Exception {
         RegistrarAnimalInicialUseCase useCase = mock(RegistrarAnimalInicialUseCase.class);
         when(useCase.executar(any())).thenReturn(UUID.randomUUID());
@@ -273,6 +275,8 @@ class AnimalControllerTest {
         ArgumentCaptor<RegistrarAnimalInicialCommand> captor = ArgumentCaptor.forClass(RegistrarAnimalInicialCommand.class);
         verify(useCase).executar(captor.capture());
         assertThat(captor.getValue().loteId()).isNull();
+        assertThat(captor.getValue().pesoAtual()).isNull();
+        assertThat(captor.getValue().dataPesagem()).isNull();
     }
 
     @ParameterizedTest

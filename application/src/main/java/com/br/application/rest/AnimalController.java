@@ -138,7 +138,9 @@ public class AnimalController {
                 request.sexo(),
                 request.categoria(),
                 request.loteId(),
-                request.origem()
+                request.origem(),
+                request.pesoAtual(),
+                request.dataPesagem()
         ));
         return ResponseEntity.status(201).body(animalId);
     }

@@ -2,10 +2,13 @@ package com.br.usecase.manejo;
 
 import com.br.core.domain.enums.Categoria;
 import com.br.core.domain.enums.OrigemAnimal;
+import com.br.core.domain.enums.OrigemPesagem;
 import com.br.core.domain.enums.Sexo;
 import com.br.core.domain.enums.Status;
 import com.br.core.domain.model.Animal;
+import com.br.core.domain.model.Pesagem;
 import com.br.core.domain.repository.AnimalRepository;
+import com.br.core.domain.repository.PesagemRepository;
 import com.br.usecase.dto.RegistrarAnimalInicialCommand;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,6 +35,9 @@ class RegistrarAnimalInicialUseCaseTest {
 
     @Mock
     private AnimalRepository animalRepository;
+
+    @Mock
+    private PesagemRepository pesagemRepository;
 
     @InjectMocks
     private RegistrarAnimalInicialUseCase useCase;
@@ -180,6 +187,120 @@ class RegistrarAnimalInicialUseCaseTest {
                 .hasMessage("A origem é obrigatória.");
 
         verify(animalRepository, never()).salvar(any());
+    }
+
+    @Test
+    @DisplayName("@spec:AC-334 Cadastro com peso cria pesagem inicial")
+    void deveCriarPesagemInicialComOrigemDeCadastro() {
+        LocalDate dataPesagem = LocalDate.of(2026, 9, 20);
+        RegistrarAnimalInicialCommand command = commandComPesagem(OrigemAnimal.DESCONHECIDO, 385.5, dataPesagem);
+        when(animalRepository.buscarPorBrinco(command.brincoRgd())).thenReturn(Optional.empty());
+
+        UUID animalId = useCase.executar(command);
+
+        ArgumentCaptor<Pesagem> captor = ArgumentCaptor.forClass(Pesagem.class);
+        verify(pesagemRepository).salvar(captor.capture());
+        Pesagem pesagem = captor.getValue();
+        assertThat(pesagem.getAnimalId()).isEqualTo(animalId);
+        assertThat(pesagem.getPeso()).isEqualTo(385.5);
+        assertThat(pesagem.getDataPesagem()).isEqualTo(dataPesagem);
+        assertThat(pesagem.getOrigem()).isEqualTo(OrigemPesagem.CADASTRO_INICIAL);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-335 Peso atual é opcional e não cria pesagem")
+    void deveCadastrarSemCriarPesagemQuandoPesoAusente() {
+        RegistrarAnimalInicialCommand command = commandValido(OrigemAnimal.DESCONHECIDO, null);
+        when(animalRepository.buscarPorBrinco(command.brincoRgd())).thenReturn(Optional.empty());
+
+        useCase.executar(command);
+
+        verifyNoInteractions(pesagemRepository);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-336 Peso atual e data da pesagem formam um par")
+    void deveRejeitarPesoOuDataInformadosIsoladamente() {
+        RegistrarAnimalInicialCommand somentePeso = commandComPesagem(
+                OrigemAnimal.DESCONHECIDO, 385.5, null
+        );
+        RegistrarAnimalInicialCommand somenteData = commandComPesagem(
+                OrigemAnimal.DESCONHECIDO, null, LocalDate.of(2026, 9, 20)
+        );
+        when(animalRepository.buscarPorBrinco(somentePeso.brincoRgd())).thenReturn(Optional.empty());
+        when(animalRepository.buscarPorBrinco(somenteData.brincoRgd())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> useCase.executar(somentePeso))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("O peso atual e a data da pesagem devem ser informados juntos.");
+        assertThatThrownBy(() -> useCase.executar(somenteData))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("O peso atual e a data da pesagem devem ser informados juntos.");
+
+        verify(animalRepository, never()).salvar(any());
+        verifyNoInteractions(pesagemRepository);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-337 Pesagem rejeita peso e datas inválidos")
+    void deveRejeitarPesagemInvalidaAntesDaPersistencia() {
+        LocalDate nascimento = LocalDate.now().minusYears(4);
+        assertThatThrownBy(() -> executarComPesagem(0, nascimento, nascimento))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("O peso atual deve ser maior que zero.");
+        assertThatThrownBy(() -> executarComPesagem(-1, nascimento, nascimento))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("O peso atual deve ser maior que zero.");
+        assertThatThrownBy(() -> executarComPesagem(385.5, nascimento, LocalDate.now().plusDays(1)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A data da pesagem não pode ser futura.");
+        assertThatThrownBy(() -> executarComPesagem(385.5, nascimento, nascimento.minusDays(1)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A data da pesagem não pode ser anterior à data de nascimento.");
+
+        verify(animalRepository, never()).salvar(any());
+        verifyNoInteractions(pesagemRepository);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-339 Peso atual preserva a origem do animal")
+    void devePreservarOrigemDoAnimalAoCriarPesagemInicial() {
+        RegistrarAnimalInicialCommand command = commandComPesagem(
+                OrigemAnimal.COMPRA, 385.5, LocalDate.of(2026, 9, 20)
+        );
+        when(animalRepository.buscarPorBrinco(command.brincoRgd())).thenReturn(Optional.empty());
+
+        useCase.executar(command);
+
+        ArgumentCaptor<Animal> animalCaptor = ArgumentCaptor.forClass(Animal.class);
+        ArgumentCaptor<Pesagem> pesagemCaptor = ArgumentCaptor.forClass(Pesagem.class);
+        verify(animalRepository).salvar(animalCaptor.capture());
+        verify(pesagemRepository).salvar(pesagemCaptor.capture());
+        assertThat(animalCaptor.getValue().getOrigem()).isEqualTo(OrigemAnimal.COMPRA);
+        assertThat(pesagemCaptor.getValue().getOrigem()).isEqualTo(OrigemPesagem.CADASTRO_INICIAL);
+    }
+
+    private void executarComPesagem(double peso, LocalDate nascimento, LocalDate dataPesagem) {
+        RegistrarAnimalInicialCommand command = commandComPesagem(
+                OrigemAnimal.DESCONHECIDO, peso, dataPesagem, nascimento
+        );
+        when(animalRepository.buscarPorBrinco(command.brincoRgd())).thenReturn(Optional.empty());
+        useCase.executar(command);
+    }
+
+    private RegistrarAnimalInicialCommand commandComPesagem(
+            OrigemAnimal origem, Double pesoAtual, LocalDate dataPesagem
+    ) {
+        return commandComPesagem(origem, pesoAtual, dataPesagem, LocalDate.now().minusYears(4));
+    }
+
+    private RegistrarAnimalInicialCommand commandComPesagem(
+            OrigemAnimal origem, Double pesoAtual, LocalDate dataPesagem, LocalDate dataNascimento
+    ) {
+        return new RegistrarAnimalInicialCommand(
+                "INI-PESO-" + UUID.randomUUID(), dataNascimento, Sexo.FEMEA, Categoria.VACA,
+                null, origem, pesoAtual, dataPesagem
+        );
     }
 
     private RegistrarAnimalInicialCommand commandValido(OrigemAnimal origem, UUID loteId) {

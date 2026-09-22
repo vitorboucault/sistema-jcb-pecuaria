@@ -1,8 +1,11 @@
 package com.br.usecase.manejo;
 
 import com.br.core.domain.enums.Status;
+import com.br.core.domain.enums.OrigemPesagem;
 import com.br.core.domain.model.Animal;
+import com.br.core.domain.model.Pesagem;
 import com.br.core.domain.repository.AnimalRepository;
+import com.br.core.domain.repository.PesagemRepository;
 import com.br.usecase.dto.RegistrarAnimalInicialCommand;
 import jakarta.inject.Named;
 import jakarta.transaction.Transactional;
@@ -14,9 +17,14 @@ import java.util.UUID;
 public class RegistrarAnimalInicialUseCase {
 
     private final AnimalRepository animalRepository;
+    private final PesagemRepository pesagemRepository;
 
-    public RegistrarAnimalInicialUseCase(AnimalRepository animalRepository) {
+    public RegistrarAnimalInicialUseCase(
+            AnimalRepository animalRepository,
+            PesagemRepository pesagemRepository
+    ) {
         this.animalRepository = animalRepository;
+        this.pesagemRepository = pesagemRepository;
     }
 
     @Transactional
@@ -40,8 +48,41 @@ public class RegistrarAnimalInicialUseCase {
                 command.origem()
         );
 
+        Pesagem pesagemInicial = criarPesagemInicial(animal.getId(), command);
         animalRepository.salvar(animal);
+        if (pesagemInicial != null) {
+            pesagemRepository.salvar(pesagemInicial);
+        }
         return animal.getId();
+    }
+
+    private Pesagem criarPesagemInicial(UUID animalId, RegistrarAnimalInicialCommand command) {
+        boolean pesoInformado = command.pesoAtual() != null;
+        boolean dataPesagemInformada = command.dataPesagem() != null;
+
+        if (pesoInformado != dataPesagemInformada) {
+            throw new IllegalArgumentException("O peso atual e a data da pesagem devem ser informados juntos.");
+        }
+        if (!pesoInformado) {
+            return null;
+        }
+        if (command.pesoAtual() <= 0) {
+            throw new IllegalArgumentException("O peso atual deve ser maior que zero.");
+        }
+        if (command.dataPesagem().isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("A data da pesagem não pode ser futura.");
+        }
+        if (command.dataPesagem().isBefore(command.dataNascimento())) {
+            throw new IllegalArgumentException("A data da pesagem não pode ser anterior à data de nascimento.");
+        }
+
+        return new Pesagem(
+                animalId,
+                command.dataPesagem(),
+                command.pesoAtual(),
+                true,
+                OrigemPesagem.CADASTRO_INICIAL
+        );
     }
 
     private void validar(RegistrarAnimalInicialCommand command) {

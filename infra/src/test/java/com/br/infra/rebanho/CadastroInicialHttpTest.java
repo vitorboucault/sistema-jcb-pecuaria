@@ -46,15 +46,21 @@ class CadastroInicialHttpTest {
     }
 
     private String payload(String brinco, String origem, String nascimento) {
+        return payload(brinco, origem, nascimento, null, null);
+    }
+
+    private String payload(String brinco, String origem, String nascimento, Double pesoAtual, String dataPesagem) {
+        String pesoJson = pesoAtual == null ? "null" : pesoAtual.toString();
+        String dataPesagemJson = dataPesagem == null ? "null" : "\"" + dataPesagem + "\"";
         return """
                 {"brincoRgd":"%s","dataNascimento":"%s","sexo":"FEMEA",
-                 "categoria":"VACA","origem":"%s"}
-                """.formatted(brinco, nascimento, origem);
+                 "categoria":"VACA","origem":"%s","pesoAtual":%s,"dataPesagem":%s}
+                """.formatted(brinco, nascimento, origem, pesoJson, dataPesagemJson);
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"COMPRA", "NASCIMENTO", "DESCONHECIDO"})
-    @DisplayName("@spec:AC-330 @spec:AC-322 @spec:AC-325 Cadastro autenticado persiste origem sem efeitos operacionais")
+    @DisplayName("@spec:AC-330 @spec:AC-322 @spec:AC-325 @spec:AC-335 Cadastro autenticado persiste origem sem efeitos operacionais")
     void cadastraSemEfeitosOperacionais(String origem) throws Exception {
         String brinco = "HTTP-" + UUID.randomUUID();
         Long despesasAntes = jdbc.queryForObject("select count(*) from transacao_financeira", Long.class);
@@ -74,6 +80,28 @@ class CadastroInicialHttpTest {
         assertThat(animal.get("data_morte")).isNull();
         assertThat(jdbc.queryForObject("select count(*) from transacao_financeira", Long.class)).isEqualTo(despesasAntes);
         assertThat(jdbc.queryForObject("select count(*) from pesagem", Long.class)).isEqualTo(pesagensAntes);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-334 @spec:AC-339 Cadastro com peso persiste pesagem de origem inicial")
+    void cadastraPesoAtualComoPesagemInicial() throws Exception {
+        String brinco = "PESO-" + UUID.randomUUID();
+        String resposta = mvc.perform(post("/api/v1/animais/cadastrar")
+                        .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
+                        .content(payload(brinco, "COMPRA", "2020-05-10", 385.5, "2026-09-20")))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        UUID id = UUID.fromString(resposta.replace("\"", ""));
+        entityManager.flush();
+
+        var animal = jdbc.queryForMap("select origem from animal where id = ?", id);
+        var pesagem = jdbc.queryForMap(
+                "select animal_id, data_pesagem, peso_kg, origem from pesagem where animal_id = ?", id
+        );
+        assertThat(animal).containsEntry("origem", "COMPRA");
+        assertThat(pesagem.get("animal_id")).isEqualTo(id);
+        assertThat(pesagem.get("data_pesagem").toString()).isEqualTo("2026-09-20");
+        assertThat(((Number) pesagem.get("peso_kg")).doubleValue()).isEqualTo(385.5);
+        assertThat(pesagem.get("origem")).isEqualTo("CADASTRO_INICIAL");
     }
 
     @Test

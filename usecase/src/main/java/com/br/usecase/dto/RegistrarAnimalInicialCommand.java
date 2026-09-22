@@ -13,6 +13,18 @@ public record RegistrarAnimalInicialCommand(
         Sexo sexo,
         Categoria categoria,
         UUID loteId,
-        OrigemAnimal origem
+        OrigemAnimal origem,
+        Double pesoAtual,
+        LocalDate dataPesagem
 ) {
+    public RegistrarAnimalInicialCommand(
+            String brincoRgd,
+            LocalDate dataNascimento,
+            Sexo sexo,
+            Categoria categoria,
+            UUID loteId,
+            OrigemAnimal origem
+    ) {
+        this(brincoRgd, dataNascimento, sexo, categoria, loteId, origem, null, null);
+    }
 }

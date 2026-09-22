@@ -131,6 +131,55 @@ fluxos operacionais de compra ou nascimento.
 - **Quando** ele for enviado ao endpoint de cadastro
 - **Então** a API retornará `400 Bad Request` sem executar o caso de uso
 
+### US-314 — Registrar peso conhecido no cadastro inicial
+
+Como produtor, quero informar o peso atual conhecido de um animal ao
+transferi-lo do caderno para o sistema, para iniciar o acompanhamento de peso
+sem inventar um peso de compra ou de nascimento.
+
+#### AC-334 — Cadastro com peso cria pesagem inicial
+
+- **Dado** um animal válido para cadastro inicial com `pesoAtual` e
+  `dataPesagem` informados
+- **Quando** o cadastro for concluído
+- **Então** o animal será salvo e uma `Pesagem` será criada com o peso
+  informado e origem `OrigemPesagem.CADASTRO_INICIAL`
+
+#### AC-335 — Peso atual é opcional
+
+- **Dado** um animal válido para cadastro inicial com `pesoAtual` e
+  `dataPesagem` ausentes
+- **Quando** o cadastro inicial for realizado
+- **Então** o animal será salvo sem criar uma pesagem
+
+#### AC-336 — Peso e data formam um par
+
+- **Dado** que apenas `pesoAtual` ou apenas `dataPesagem` foi informado
+- **Quando** o cadastro inicial for solicitado
+- **Então** a operação será rejeitada e nenhum animal ou pesagem parcial
+  permanecerá persistido
+
+#### AC-337 — Pesagem inválida é rejeitada
+
+- **Dado** um cadastro inicial com peso menor ou igual a zero, data futura ou
+  data de pesagem anterior à data de nascimento
+- **Quando** o cadastro inicial for solicitado
+- **Então** a operação será rejeitada antes da persistência de animal ou
+  pesagem
+
+#### AC-338 — Cadastro e pesagem são atômicos
+
+- **Dado** um cadastro inicial com pesagem informada
+- **Quando** ocorrer falha ao persistir a pesagem
+- **Então** o animal e a pesagem não permanecerão parcialmente persistidos
+
+#### AC-339 — Peso atual não altera a origem do animal
+
+- **Dado** qualquer `OrigemAnimal` válida e, opcionalmente, um peso atual
+- **Quando** o cadastro inicial for processado
+- **Então** a origem do animal permanecerá a informada e o peso será registrado
+  exclusivamente no histórico de `Pesagem`
+
 ## Decisões de modelagem
 
 - `OrigemAnimal` é um enum de domínio associado à entidade `Animal`.
@@ -146,6 +195,22 @@ fluxos operacionais de compra ou nascimento.
   financeiro ou comercial.
 - `POST /api/v1/animais/cadastrar` é a entrada REST específica para cadastro
   inicial e delega exclusivamente para `RegistrarAnimalInicialUseCase`.
+- `pesoAtual` e `dataPesagem` são campos opcionais do cadastro inicial, mas
+  formam um par: ambos ausentes significam nenhuma pesagem; ambos presentes
+  criam uma `Pesagem` com origem `OrigemPesagem.CADASTRO_INICIAL`.
+- `pesoAtual` não será persistido em `Animal`. O peso atual exibido continuará
+  sendo derivado da última `Pesagem` conhecida.
+- O cadastro inicial rejeita peso menor ou igual a zero, data futura e data de
+  pesagem anterior à data de nascimento. A ausência de peso permanece como
+  `null`; nenhum peso ou data será inventado.
+- Animal e pesagem inicial devem ser persistidos dentro de uma única transação
+  do caso de uso. Falha na pesagem deve desfazer também o cadastro do animal.
+- A T-504 reutiliza `Pesagem`, `OrigemPesagem` e o repositório de pesagens.
+  Não cria entidade, migration ou regra nova de jejum. O comportamento atual
+  exigido pelo modelo para `jejum` será preservado até uma decisão específica.
+- O peso informado nesta task é peso atual conhecido na implantação, mesmo
+  quando `OrigemAnimal` for `COMPRA`; não representa peso de aquisição,
+  nascimento ou entrada na fazenda.
 - A persistência é introduzida pela migration Flyway V9. Registros legados sem
   origem confiável são preenchidos com `DESCONHECIDO`.
 - O custo de aquisição pertence ao animal. A composição futura do custo do
@@ -160,8 +225,10 @@ fluxos operacionais de compra ou nascimento.
 - Frontend, Financeiro e custos de lote.
 - Importação por planilha.
 - Datas estimadas e valores históricos de compra.
-- Pesagem inicial, data de compra, valor de compra e campos de custo no
-  animal.
+- Peso de compra, peso de nascimento, data de compra, valor de compra e campos
+  de custo no animal.
+- Edição de pesagem, novo campo de jejum e qualquer alteração visual no
+  frontend.
 - Alterações em migrations já existentes e `OrigemAnimal`.
 - Alterações nos endpoints operacionais existentes, especialmente
   `POST /api/v1/animais`, e em `AnimalInputDTO`.
@@ -173,6 +240,8 @@ fluxos operacionais de compra ou nascimento.
 | ASM-501 | O caso de uso específico de cadastro inicial não faz parte da T-501. | confirmada | Limite histórico da T-501 preservado. A operação dedicada foi implementada na T-502 e exposta pela API na T-503. |
 | ASM-502 | A categoria informada no cadastro inicial é histórica e confiável. | confirmada | O cadastro inicial a preserva sem inferi-la a partir da idade. |
 | ASM-503 | A resposta de sucesso do cadastro inicial seguirá o padrão do endpoint de animais atual. | confirmada | A API retorna `201 Created` com o UUID do animal no corpo. |
+| ASM-504 | O comportamento atual exigido pelo campo `jejum` deve ser preservado, sem nova decisão de domínio nesta task. | confirmada | A T-504 trata somente peso, data da pesagem e `OrigemPesagem.CADASTRO_INICIAL`; não adiciona campo nem altera a semântica de jejum. |
+| ASM-505 | O endpoint oficial da T-504 é `POST /api/v1/animais/cadastrar`. | confirmada | A T-503 já definiu e implementou esse contrato; a menção a `/cadastro` foi descartada como divergência textual. |
 
 ## Perguntas em aberto
 

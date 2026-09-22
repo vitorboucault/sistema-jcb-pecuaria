@@ -25,6 +25,10 @@ public record RegistrarAnimalInicialRequest(
         UUID loteId,
 
         @NotNull(message = "A origem é obrigatória.")
-        OrigemAnimal origem
+        OrigemAnimal origem,
+
+        Double pesoAtual,
+
+        LocalDate dataPesagem
 ) {
 }
