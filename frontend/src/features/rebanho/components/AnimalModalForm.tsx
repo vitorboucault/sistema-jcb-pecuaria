@@ -54,6 +54,27 @@ export const AnimalModalForm = ({
     const [carregando, setCarregando] = useState(false);
     const [erro, setErro] = useState<string | null>(null);
 
+    const resetForm = () => {
+        setFluxo('EXISTENTE');
+        setOrigem('DESCONHECIDO');
+        setBrincoRgd('');
+        setCategoria('GARROTE');
+        setSexo('MACHO');
+        setPesoAtual('');
+        setDataPesagem('');
+        setPesoNascimento('35');
+        setDataNascimento(hojeLocal());
+        setLoteId('');
+        setMaeId('');
+        setCarregando(false);
+        setErro(null);
+    };
+
+    const handleClose = () => {
+        resetForm();
+        onClose();
+    };
+
     if (!isOpen) return null;
 
     const handleFluxoChange = (novoFluxo: FluxoCadastroAnimal) => {
@@ -118,7 +139,7 @@ export const AnimalModalForm = ({
                 };
 
             await onCadastrar(cadastro);
-            onClose();
+            handleClose();
         } catch (err: unknown) {
             console.error(err);
             setErro('Erro ao registrar animal no banco de dados. Verifique os dados informados.');
@@ -137,7 +158,7 @@ export const AnimalModalForm = ({
                         <Tag className="w-5 h-5 text-emerald-500" />
                         CADASTRAR ANIMAL
                     </h2>
-                    <button onClick={onClose} className="text-stone-400 hover:text-white transition-colors cursor-pointer">
+                    <button onClick={handleClose} className="text-stone-400 hover:text-white transition-colors cursor-pointer">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -153,6 +174,7 @@ export const AnimalModalForm = ({
                         <button
                             type="button"
                             onClick={() => handleFluxoChange('EXISTENTE')}
+                            aria-pressed={fluxo === 'EXISTENTE'}
                             className={`flex-1 py-2 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer ${
                                 fluxo === 'EXISTENTE' ? 'bg-emerald-600 text-stone-950' : 'text-stone-400 hover:text-white'
                             }`}
@@ -162,6 +184,7 @@ export const AnimalModalForm = ({
                         <button
                             type="button"
                             onClick={() => handleFluxoChange('NASCIMENTO')}
+                            aria-pressed={isNascimento}
                             className={`flex-1 py-2 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer ${
                                 isNascimento ? 'bg-emerald-600 text-stone-950' : 'text-stone-400 hover:text-white'
                             }`}
@@ -343,7 +366,7 @@ export const AnimalModalForm = ({
                     <div className="pt-4 flex items-center justify-end gap-3">
                         <button
                             type="button"
-                            onClick={onClose}
+                            onClick={handleClose}
                             className="px-4 py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold text-xs uppercase rounded-xl transition-colors cursor-pointer"
                         >
                             Cancelar

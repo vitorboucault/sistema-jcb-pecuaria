@@ -164,7 +164,7 @@ describe('Rebanho renderizado', () => {
         }));
     });
 
-    it('@spec:AC-344 rejeita peso atual ou data da pesagem isolados', async () => {
+    it('@spec:AC-344 rejeita peso atual informado sem data da pesagem', async () => {
         const user = userEvent.setup();
         render(<RebanhoPage />);
         await screen.findByText(ativo.brincoRgd);
@@ -175,6 +175,52 @@ describe('Rebanho renderizado', () => {
 
         expect(await screen.findByText('Peso atual e data da pesagem devem ser informados juntos.')).toBeDefined();
         expect(rebanhoService.cadastrarAnimalInicial).not.toHaveBeenCalled();
+    });
+
+    it('@spec:AC-344 rejeita data da pesagem informada sem peso atual', async () => {
+        const user = userEvent.setup();
+        render(<RebanhoPage />);
+        await screen.findByText(ativo.brincoRgd);
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+        await user.type(screen.getByLabelText('Brinco / RGD *'), 'HIST-103');
+        await user.type(screen.getByLabelText('Data da pesagem'), '2025-01-15');
+        await user.click(screen.getByRole('button', { name: 'Salvar Animal' }));
+
+        expect(await screen.findByText('Peso atual e data da pesagem devem ser informados juntos.')).toBeDefined();
+        expect(rebanhoService.cadastrarAnimalInicial).not.toHaveBeenCalled();
+    });
+
+    it('@spec:AC-340 @spec:AC-341 reseta o formulário ao cancelar e ao reabrir após sucesso', async () => {
+        const user = userEvent.setup();
+        const lote = { id: 'lote-1', nome: 'Lote 1', fase: 'CRIA' as const, quantidadeAnimais: 0, pesoMedio: 0 };
+        vi.mocked(rebanhoService.listarLotes).mockResolvedValue([lote]);
+        render(<RebanhoPage />);
+        await screen.findByText(ativo.brincoRgd);
+
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+        await user.click(screen.getByRole('button', { name: 'Novo nascimento' }));
+        await user.type(screen.getByLabelText('Brinco / RGD *'), 'NAO-PERSISTIR');
+        await user.selectOptions(screen.getByRole('combobox', { name: 'Matriz (opcional)' }), ativo.id);
+        await user.selectOptions(screen.getByRole('combobox', { name: 'Lote (opcional)' }), lote.id);
+        await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+        expect(screen.getByRole('button', { name: 'Animal já existente' }).getAttribute('aria-pressed')).toBe('true');
+        expect((screen.getByRole('combobox', { name: 'Origem histórica *' }) as HTMLSelectElement).value).toBe('DESCONHECIDO');
+        expect((screen.getByLabelText('Brinco / RGD *') as HTMLInputElement).value).toBe('');
+        expect((screen.getByLabelText('Peso atual (kg)') as HTMLInputElement).value).toBe('');
+        expect((screen.getByLabelText('Data da pesagem') as HTMLInputElement).value).toBe('');
+        expect((screen.getByRole('combobox', { name: 'Lote (opcional)' }) as HTMLSelectElement).value).toBe('');
+        expect(screen.queryByRole('combobox', { name: 'Matriz (opcional)' })).toBeNull();
+
+        await user.type(screen.getByLabelText('Brinco / RGD *'), 'SUCESSO-RESET');
+        await user.click(screen.getByRole('button', { name: 'Salvar Animal' }));
+        await waitFor(() => expect(rebanhoService.cadastrarAnimalInicial).toHaveBeenCalledOnce());
+        await waitFor(() => expect(screen.queryByRole('heading', { name: 'CADASTRAR ANIMAL' })).toBeNull());
+
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+        expect((screen.getByLabelText('Brinco / RGD *') as HTMLInputElement).value).toBe('');
+        expect((screen.getByRole('combobox', { name: 'Lote (opcional)' }) as HTMLSelectElement).value).toBe('');
     });
 
     it('@spec:AC-345 @spec:AC-347 usa nascimento operacional e isola payloads ao alternar fluxos', async () => {
