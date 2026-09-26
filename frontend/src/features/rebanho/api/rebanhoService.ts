@@ -1,5 +1,14 @@
 import { api } from '../../../shared/api/client';
-import type { Animal, AtualizarAnimalInput, CadastrarAnimalInput, Lote, Pagina, ResumoRebanho, StatusAnimal } from '../types';
+import type {
+    Animal,
+    AtualizarAnimalInput,
+    CadastrarAnimalInicialInput,
+    CadastrarNascimentoInput,
+    Lote,
+    Pagina,
+    ResumoRebanho,
+    StatusAnimal,
+} from '../types';
 
 export const rebanhoService = {
     async listarAnimaisPaginado(status?: StatusAnimal, pagina = 0, tamanho = 100): Promise<Pagina<Animal>> {
@@ -35,7 +44,12 @@ export const rebanhoService = {
         return response.data;
     },
 
-    async cadastrarAnimal(animal: CadastrarAnimalInput): Promise<string>{
+    async cadastrarAnimalInicial(animal: CadastrarAnimalInicialInput): Promise<string> {
+        const response = await api.post<string>('v1/animais/cadastrar', animal);
+        return response.data;
+    },
+
+    async cadastrarNascimento(animal: CadastrarNascimentoInput): Promise<string> {
         const response = await api.post<string>('v1/animais', animal);
         return response.data;
     },

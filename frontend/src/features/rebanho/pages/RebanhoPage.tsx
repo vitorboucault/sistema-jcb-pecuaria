@@ -1,7 +1,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import { isAxiosError } from 'axios';
 import { rebanhoService } from '../api/rebanhoService';
-import type { Animal, AtualizarAnimalInput, CadastrarAnimalInput, CategoriaAnimal, Lote, ResumoRebanho, StatusAnimal } from '../types';
+import type {
+    Animal,
+    AtualizarAnimalInput,
+    CadastroAnimalFormInput,
+    CategoriaAnimal,
+    Lote,
+    ResumoRebanho,
+    StatusAnimal,
+} from '../types';
 import { AnimalModalForm } from '../components/AnimalModalForm';
 import { Users, Plus, Tag, AlertCircle, Activity, Pencil, Skull, Trash2, RotateCcw, X, Save } from 'lucide-react';
 
@@ -95,8 +103,12 @@ export const RebanhoPage = () => {
         return () => window.clearTimeout(timeout);
     }, [carregarMatrizes]);
 
-    const handleCadastrarAnimal = async (dados: CadastrarAnimalInput) => {
-        await rebanhoService.cadastrarAnimal(dados);
+    const handleCadastrarAnimal = async (cadastro: CadastroAnimalFormInput) => {
+        if (cadastro.fluxo === 'EXISTENTE') {
+            await rebanhoService.cadastrarAnimalInicial(cadastro.dados);
+        } else {
+            await rebanhoService.cadastrarNascimento(cadastro.dados);
+        }
         await recarregarDados();
     };
 

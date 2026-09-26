@@ -3,7 +3,7 @@ import { rebanhoService } from '../src/features/rebanho/api/rebanhoService';
 import { api } from '../src/shared/api/client';
 import type { Animal, Pagina } from '../src/features/rebanho/types';
 
-vi.mock('../src/shared/api/client', () => ({ api: { get: vi.fn() } }));
+vi.mock('../src/shared/api/client', () => ({ api: { get: vi.fn(), post: vi.fn() } }));
 
 describe('paginação existente de matrizes', () => {
     it('@spec:AC-331 @spec:AC-313 consulta todas as páginas e mantém matrizes além da primeira', async () => {
@@ -32,5 +32,41 @@ describe('paginação existente de matrizes', () => {
             data: { conteudo: [], numeroPagina: 0, tamanhoPagina: 100, totalElementos: 101, totalPaginas: 2 },
         }).mockRejectedValueOnce(new Error('falha da página 2'));
         await expect(rebanhoService.listarMatrizes()).rejects.toThrow('falha da página 2');
+    });
+});
+
+describe('cadastro do animal', () => {
+    it('@spec:AC-342 cadastra animal existente no endpoint dedicado', async () => {
+        vi.mocked(api.post).mockResolvedValue({ data: 'animal-inicial' });
+
+        const dados = {
+            origem: 'COMPRA' as const,
+            brincoRgd: 'BR-100',
+            categoria: 'VACA' as const,
+            sexo: 'FEMEA' as const,
+            dataNascimento: '2020-01-01',
+        };
+
+        await expect(rebanhoService.cadastrarAnimalInicial(dados)).resolves.toBe('animal-inicial');
+        expect(api.post).toHaveBeenCalledWith('v1/animais/cadastrar', dados);
+    });
+
+    it('@spec:AC-345 preserva nascimento no endpoint operacional', async () => {
+        vi.mocked(api.post).mockResolvedValue({ data: 'bezerro' });
+
+        const dados = {
+            origem: 'NASCIMENTO' as const,
+            brincoRgd: 'BEZ-100',
+            categoria: 'BEZERRO' as const,
+            sexo: 'MACHO' as const,
+            peso: 35,
+            dataNascimento: '2026-01-10',
+            dataEntrada: '2026-01-10',
+            maeId: 'matriz-1',
+            loteId: 'lote-1',
+        };
+
+        await expect(rebanhoService.cadastrarNascimento(dados)).resolves.toBe('bezerro');
+        expect(api.post).toHaveBeenCalledWith('v1/animais', dados);
     });
 });

@@ -180,6 +180,80 @@ sem inventar um peso de compra ou de nascimento.
 - **Então** a origem do animal permanecerá a informada e o peso será registrado
   exclusivamente no histórico de `Pesagem`
 
+### US-315 — Integrar o cadastro inicial ao frontend
+
+Como produtor, quero escolher entre cadastrar um animal já existente e
+registrar um novo nascimento no modal do rebanho, para migrar o plantel sem
+confundir histórico de origem com a operação de nascimento ou de compra.
+
+#### AC-340 — Modal oferece somente os fluxos previstos
+
+- **Dado** que o modal de cadastro de animal seja aberto
+- **Quando** os fluxos disponíveis forem apresentados
+- **Então** ele oferecerá `Animal já existente` e `Novo nascimento`, sem
+  oferecer uma operação de compra ou aquisição
+
+#### AC-341 — Cadastro histórico oferece origem e lote opcionais
+
+- **Dado** que o fluxo `Animal já existente` esteja selecionado
+- **Quando** o formulário for preenchido
+- **Então** a origem histórica oferecerá `COMPRA`, `NASCIMENTO` e
+  `DESCONHECIDO`, começará em `DESCONHECIDO` e o lote terá `Sem lote` como
+  primeira opção sem seleção automática
+
+#### AC-342 — Cadastro histórico usa o endpoint dedicado
+
+- **Dado** um animal já existente válido
+- **Quando** o cadastro for enviado pelo frontend
+- **Então** `rebanhoService.cadastrarAnimalInicial()` chamará
+  `POST /api/v1/animais/cadastrar`
+
+#### AC-343 — Peso atual histórico é enviado com sua data
+
+- **Dado** que o fluxo `Animal já existente` tenha peso atual e data da
+  pesagem informados
+- **Quando** o cadastro for enviado
+- **Então** o payload conterá `pesoAtual` e `dataPesagem` juntos
+
+#### AC-344 — Peso atual e data da pesagem formam um par no formulário
+
+- **Dado** que somente o peso atual ou somente a data da pesagem tenha sido
+  informado
+- **Quando** o formulário for submetido
+- **Então** o cadastro não será chamado e o formulário exibirá um erro de
+  preenchimento do par
+
+#### AC-345 — Nascimento usa o endpoint operacional
+
+- **Dado** que o fluxo `Novo nascimento` esteja selecionado
+- **Quando** o nascimento for enviado
+- **Então** o frontend chamará `POST /api/v1/animais` com o peso ao nascer,
+  a matriz e o lote do nascimento quando informados, sem enviar
+  `pesoAtual`, `dataPesagem` ou dados de compra
+
+#### AC-346 — Matriz fica restrita às matrizes elegíveis
+
+- **Dado** que animais ativos sejam carregados para o formulário de
+  nascimento
+- **Quando** a lista de matrizes for apresentada
+- **Então** somente fêmeas ativas das categorias `VACA` ou `NOVILHA` serão
+  selecionáveis
+
+#### AC-347 — Payloads permanecem isolados ao alternar o fluxo
+
+- **Dado** que o usuário alterne entre `Animal já existente` e `Novo
+  nascimento`
+- **Quando** cada fluxo for submetido
+- **Então** cada chamada conterá somente os campos do seu contrato, sem
+  transportar `maeId`, dados de compra ou campos de pesagem do outro fluxo
+
+#### AC-348 — Cadastro bem-sucedido recarrega os dados uma única vez
+
+- **Dado** que qualquer um dos fluxos de cadastro conclua com sucesso
+- **Quando** o frontend atualizar a tela
+- **Então** `recarregarDados()` será executado uma única vez após a chamada
+  correspondente
+
 ## Decisões de modelagem
 
 - `OrigemAnimal` é um enum de domínio associado à entidade `Animal`.
@@ -218,17 +292,29 @@ sem inventar um peso de compra ou de nascimento.
   campo mutável do lote.
 - A ausência de custo ou de data histórica será representada pela ausência de
   informação definida pelo modelo, nunca por zero ou por uma data fictícia.
+- O frontend separa `FluxoCadastroAnimal` (operação `EXISTENTE` ou
+  `NASCIMENTO`) de `OrigemAnimal` (histórico `COMPRA`, `NASCIMENTO` ou
+  `DESCONHECIDO`). O fluxo `EXISTENTE` inicia com origem `DESCONHECIDO`.
+- O cadastro histórico usa `POST /api/v1/animais/cadastrar`, sem acionar a
+  compra operacional. O fluxo de nascimento preserva `POST /api/v1/animais`.
+- O lote é opcional nos dois fluxos e não recebe seleção automática. O fluxo
+  histórico pode enviar `pesoAtual` e `dataPesagem` somente em conjunto; o
+  fluxo de nascimento envia somente seu peso ao nascer e a data do nascimento
+  como data da pesagem operacional existente.
 
 ## Fora de escopo
 
 - `TipoEntradaAnimal` e `OrigemHistoricaAnimal`.
-- Frontend, Financeiro e custos de lote.
+- Frontend fora do modal coberto pela US-315, Financeiro e custos de lote.
 - Importação por planilha.
 - Datas estimadas e valores históricos de compra.
 - Peso de compra, peso de nascimento, data de compra, valor de compra e campos
   de custo no animal.
 - Edição de pesagem, novo campo de jejum e qualquer alteração visual no
-  frontend.
+  frontend fora do modal coberto pela US-315.
+- A compra operacional no frontend, a tarefa T-506 e qualquer alteração no
+  backend, migrations ou contratos operacionais fora do necessário para o
+  fluxo de nascimento.
 - Alterações em migrations já existentes e `OrigemAnimal`.
 - Alterações nos endpoints operacionais existentes, especialmente
   `POST /api/v1/animais`, e em `AnimalInputDTO`.
