@@ -29,6 +29,7 @@ O versionamento do esquema é gerenciado exclusivamente pelo **Flyway**.
 7. `V7__Add_Data_Morte_Animal.sql`: Inclusão de `data_morte` na tabela de animais para suporte a baixas e reversões.
 8. `V8__Add_Origem_Pesagem.sql`: Inclusão da coluna `origem` em `pesagem` (`CADASTRO_INICIAL`, `OPERACIONAL`).
 9. `V9__Add_Origem_Animal.sql`: Origem persistida do animal (`COMPRA`, `NASCIMENTO`, `DESCONHECIDO`), com fallback legado `DESCONHECIDO` e constraint de valores permitidos.
+10. `V10__Create_Aquisicao_Animal.sql`: Dados econômicos históricos opcionais da aquisição do animal, com unicidade por animal, valor positivo, ao menos um dado conhecido e FK com `ON DELETE CASCADE`.
 
 ---
 
@@ -38,3 +39,4 @@ O versionamento do esquema é gerenciado exclusivamente pelo **Flyway**.
 - **Nomenclatura**: Tabelas e colunas em `snake_case` (ex: `data_nascimento`, `peso_venda`).
 - **Chaves Estrangeiras**: Criar restrições com prefixo explícito `fk_<tabela_origem>_<tabela_destino>` e índices nas colunas de relacionamento.
 - **Enums**: Mapeados como `VARCHAR(30)` ou `VARCHAR(50)`, correspondendo fielmente aos nomes dos enums em Java no `core`.
+- **Aquisição histórica**: `aquisicao_animal` é separada de `animal` e de `transacao_financeira`; representa custo conhecido do animal, não uma movimentação de caixa atual.

@@ -2,9 +2,12 @@ package com.br.usecase.manejo;
 
 import com.br.core.domain.enums.Status;
 import com.br.core.domain.enums.OrigemPesagem;
+import com.br.core.domain.enums.OrigemAnimal;
 import com.br.core.domain.model.Animal;
+import com.br.core.domain.model.AquisicaoAnimal;
 import com.br.core.domain.model.Pesagem;
 import com.br.core.domain.repository.AnimalRepository;
+import com.br.core.domain.repository.AquisicaoAnimalRepository;
 import com.br.core.domain.repository.PesagemRepository;
 import com.br.usecase.dto.RegistrarAnimalInicialCommand;
 import jakarta.inject.Named;
@@ -18,13 +21,16 @@ public class RegistrarAnimalInicialUseCase {
 
     private final AnimalRepository animalRepository;
     private final PesagemRepository pesagemRepository;
+    private final AquisicaoAnimalRepository aquisicaoAnimalRepository;
 
     public RegistrarAnimalInicialUseCase(
             AnimalRepository animalRepository,
-            PesagemRepository pesagemRepository
+            PesagemRepository pesagemRepository,
+            AquisicaoAnimalRepository aquisicaoAnimalRepository
     ) {
         this.animalRepository = animalRepository;
         this.pesagemRepository = pesagemRepository;
+        this.aquisicaoAnimalRepository = aquisicaoAnimalRepository;
     }
 
     @Transactional
@@ -49,11 +55,35 @@ public class RegistrarAnimalInicialUseCase {
         );
 
         Pesagem pesagemInicial = criarPesagemInicial(animal.getId(), command);
+        AquisicaoAnimal aquisicao = criarAquisicaoHistorica(animal, command);
         animalRepository.salvar(animal);
         if (pesagemInicial != null) {
             pesagemRepository.salvar(pesagemInicial);
         }
+        if (aquisicao != null) {
+            aquisicaoAnimalRepository.salvar(aquisicao);
+        }
         return animal.getId();
+    }
+
+    private AquisicaoAnimal criarAquisicaoHistorica(Animal animal, RegistrarAnimalInicialCommand command) {
+        boolean dataInformada = command.dataCompraHistorica() != null;
+        boolean valorInformado = command.valorCompraHistorico() != null;
+
+        if (!dataInformada && !valorInformado) {
+            return null;
+        }
+        if (command.origem() != OrigemAnimal.COMPRA) {
+            throw new IllegalArgumentException("Dados históricos de aquisição só são permitidos para origem COMPRA.");
+        }
+
+        return new AquisicaoAnimal(
+                UUID.randomUUID(),
+                animal.getId(),
+                command.dataCompraHistorica(),
+                command.valorCompraHistorico(),
+                command.dataNascimento()
+        );
     }
 
     private Pesagem criarPesagemInicial(UUID animalId, RegistrarAnimalInicialCommand command) {

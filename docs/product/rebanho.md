@@ -60,6 +60,18 @@ um campo mutável do lote.
 Quando não houver custo ou data histórica confiável, a ausência permanece sem
 ser substituída por zero ou por uma data fictícia.
 
+#### Aquisição histórica do animal
+
+`origem = COMPRA` não é sinônimo de compra operacional. No cadastro inicial,
+`AquisicaoAnimal` guarda opcionalmente a data e/ou o valor conhecidos da
+aquisição daquele animal. O valor histórico é o custo de aquisição do animal e
+acompanha o animal quando ele muda de lote; ele não cria `Despesa`, lançamento
+em `transacao_financeira` ou saída de caixa atual.
+
+Se nenhum dado de aquisição for conhecido, o animal permanece com origem
+`COMPRA` e sem registro `AquisicaoAnimal`. Data e valor são independentes:
+informação ausente permanece `null`, sem preenchimento fictício.
+
 ### 2.2. Manejo e Pesagens
 - **Pesagem Inicial**: Registrada com origem `OrigemPesagem.CADASTRO_INICIAL`.
 - **Pesagens Operacionais**: Registradas com origem `OrigemPesagem.OPERACIONAL` para acompanhamento de manejo e cálculo de Ganho Médio Diário (GMD).

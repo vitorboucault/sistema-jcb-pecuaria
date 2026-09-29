@@ -6,8 +6,10 @@ import com.br.core.domain.enums.OrigemPesagem;
 import com.br.core.domain.enums.Sexo;
 import com.br.core.domain.enums.Status;
 import com.br.core.domain.model.Animal;
+import com.br.core.domain.model.AquisicaoAnimal;
 import com.br.core.domain.model.Pesagem;
 import com.br.core.domain.repository.AnimalRepository;
+import com.br.core.domain.repository.AquisicaoAnimalRepository;
 import com.br.core.domain.repository.PesagemRepository;
 import com.br.usecase.dto.RegistrarAnimalInicialCommand;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,6 +41,9 @@ class RegistrarAnimalInicialUseCaseTest {
 
     @Mock
     private PesagemRepository pesagemRepository;
+
+    @Mock
+    private AquisicaoAnimalRepository aquisicaoAnimalRepository;
 
     @InjectMocks
     private RegistrarAnimalInicialUseCase useCase;
@@ -80,7 +86,7 @@ class RegistrarAnimalInicialUseCaseTest {
     }
 
     @Test
-    @DisplayName("@spec:AC-322 Cadastro inicial com origem COMPRA não gera efeito financeiro")
+    @DisplayName("@spec:AC-322 @spec:AC-349 Cadastro inicial com compra histórica sem dados não cria aquisição nem operação")
     void deveRegistrarCompraHistoricaSemAcionarCompraOperacional() {
         RegistrarAnimalInicialCommand command = commandValido(OrigemAnimal.COMPRA, UUID.randomUUID());
         when(animalRepository.buscarPorBrinco(command.brincoRgd())).thenReturn(Optional.empty());
@@ -90,6 +96,98 @@ class RegistrarAnimalInicialUseCaseTest {
         ArgumentCaptor<Animal> captor = ArgumentCaptor.forClass(Animal.class);
         verify(animalRepository).salvar(captor.capture());
         assertThat(captor.getValue().getOrigem()).isEqualTo(OrigemAnimal.COMPRA);
+        verifyNoInteractions(aquisicaoAnimalRepository);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-350 Cadastro inicial com data e valor cria aquisição do animal correto")
+    void deveRegistrarAquisicaoHistoricaComDataEValor() {
+        LocalDate dataCompra = LocalDate.of(2021, 5, 10);
+        BigDecimal valorCompra = new BigDecimal("3200.00");
+        RegistrarAnimalInicialCommand command = commandComAquisicao(
+                OrigemAnimal.COMPRA, dataCompra, valorCompra
+        );
+        when(animalRepository.buscarPorBrinco(command.brincoRgd())).thenReturn(Optional.empty());
+
+        UUID animalId = useCase.executar(command);
+
+        ArgumentCaptor<AquisicaoAnimal> captor = ArgumentCaptor.forClass(AquisicaoAnimal.class);
+        verify(aquisicaoAnimalRepository).salvar(captor.capture());
+        assertThat(captor.getValue().getAnimalId()).isEqualTo(animalId);
+        assertThat(captor.getValue().getDataAquisicao()).isEqualTo(dataCompra);
+        assertThat(captor.getValue().getValorAquisicao()).isEqualByComparingTo(valorCompra);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-351 Cadastro inicial aceita data ou valor histórico isoladamente")
+    void deveAceitarDataEValorHistoricosIndependentemente() {
+        RegistrarAnimalInicialCommand somenteData = commandComAquisicao(
+                OrigemAnimal.COMPRA, LocalDate.of(2021, 5, 10), null
+        );
+        RegistrarAnimalInicialCommand somenteValor = commandComAquisicao(
+                OrigemAnimal.COMPRA, null, new BigDecimal("3200.00")
+        );
+        when(animalRepository.buscarPorBrinco(somenteData.brincoRgd())).thenReturn(Optional.empty());
+        when(animalRepository.buscarPorBrinco(somenteValor.brincoRgd())).thenReturn(Optional.empty());
+
+        useCase.executar(somenteData);
+        useCase.executar(somenteValor);
+
+        ArgumentCaptor<AquisicaoAnimal> captor = ArgumentCaptor.forClass(AquisicaoAnimal.class);
+        verify(aquisicaoAnimalRepository, org.mockito.Mockito.times(2)).salvar(captor.capture());
+        assertThat(captor.getAllValues().get(0).getDataAquisicao()).isNotNull();
+        assertThat(captor.getAllValues().get(0).getValorAquisicao()).isNull();
+        assertThat(captor.getAllValues().get(1).getDataAquisicao()).isNull();
+        assertThat(captor.getAllValues().get(1).getValorAquisicao()).isEqualByComparingTo("3200.00");
+    }
+
+    @Test
+    @DisplayName("@spec:AC-352 Cadastro inicial rejeita aquisição histórica para origem incompatível")
+    void deveRejeitarAquisicaoHistoricaForaDaOrigemCompra() {
+        RegistrarAnimalInicialCommand nascimento = commandComAquisicao(
+                OrigemAnimal.NASCIMENTO, LocalDate.of(2021, 5, 10), new BigDecimal("3200.00")
+        );
+        RegistrarAnimalInicialCommand desconhecido = commandComAquisicao(
+                OrigemAnimal.DESCONHECIDO, null, new BigDecimal("3200.00")
+        );
+
+        assertThatThrownBy(() -> useCase.executar(nascimento))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Dados históricos de aquisição só são permitidos para origem COMPRA.");
+        assertThatThrownBy(() -> useCase.executar(desconhecido))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Dados históricos de aquisição só são permitidos para origem COMPRA.");
+
+        verify(animalRepository, never()).salvar(any());
+        verifyNoInteractions(aquisicaoAnimalRepository);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-353 Cadastro inicial rejeita valor e datas históricas inválidos")
+    void deveRejeitarDadosHistoricosInvalidosAntesDaPersistencia() {
+        LocalDate nascimento = LocalDate.of(2019, 4, 10);
+        RegistrarAnimalInicialCommand valorZero = commandComAquisicao(
+                OrigemAnimal.COMPRA, null, BigDecimal.ZERO, nascimento
+        );
+        RegistrarAnimalInicialCommand dataFutura = commandComAquisicao(
+                OrigemAnimal.COMPRA, LocalDate.now().plusDays(1), null, nascimento
+        );
+        RegistrarAnimalInicialCommand dataAntesNascimento = commandComAquisicao(
+                OrigemAnimal.COMPRA, nascimento.minusDays(1), null, nascimento
+        );
+
+        assertThatThrownBy(() -> useCase.executar(valorZero))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("O valor da aquisição deve ser maior que zero.");
+        assertThatThrownBy(() -> useCase.executar(dataFutura))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A data da aquisição não pode ser futura.");
+        assertThatThrownBy(() -> useCase.executar(dataAntesNascimento))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A data da aquisição não pode ser anterior à data de nascimento.");
+
+        verify(animalRepository, never()).salvar(any());
+        verifyNoInteractions(aquisicaoAnimalRepository);
     }
 
     @Test
@@ -306,6 +404,21 @@ class RegistrarAnimalInicialUseCaseTest {
     private RegistrarAnimalInicialCommand commandValido(OrigemAnimal origem, UUID loteId) {
         return new RegistrarAnimalInicialCommand(
                 "INI-001", LocalDate.now().minusYears(4), Sexo.FEMEA, Categoria.VACA, loteId, origem
+        );
+    }
+
+    private RegistrarAnimalInicialCommand commandComAquisicao(
+            OrigemAnimal origem, LocalDate dataCompra, BigDecimal valorCompra
+    ) {
+        return commandComAquisicao(origem, dataCompra, valorCompra, LocalDate.of(2019, 4, 10));
+    }
+
+    private RegistrarAnimalInicialCommand commandComAquisicao(
+            OrigemAnimal origem, LocalDate dataCompra, BigDecimal valorCompra, LocalDate dataNascimento
+    ) {
+        return new RegistrarAnimalInicialCommand(
+                "INI-AQUISICAO-" + UUID.randomUUID(), dataNascimento, Sexo.FEMEA, Categoria.VACA,
+                null, origem, null, null, dataCompra, valorCompra
         );
     }
 

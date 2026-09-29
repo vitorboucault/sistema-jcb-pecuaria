@@ -8,6 +8,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -24,7 +25,7 @@ class RebanhoPostgresIT {
         try (var banco = new PostgreSQLContainer("postgres:17-alpine")) {
             banco.start();
             var flyway = migrador(banco, "latest");
-            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(9);
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(10);
             flyway.validate();
             try (var conexao = DriverManager.getConnection(banco.getJdbcUrl(), banco.getUsername(), banco.getPassword())) {
                 for (String origem : new String[]{"COMPRA", "NASCIMENTO", "DESCONHECIDO"}) {
@@ -43,6 +44,56 @@ class RebanhoPostgresIT {
     }
 
     @Test
+    @DisplayName("@spec:AC-353 @spec:AC-356 V10 restringe aquisição histórica e remove-a em cascata")
+    void criaAquisicaoComRestriçõesECascata() throws Exception {
+        try (var banco = new PostgreSQLContainer("postgres:17-alpine")) {
+            banco.start();
+            var flyway = migrador(banco, "latest");
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(10);
+
+            UUID animalId = UUID.randomUUID();
+            try (var conexao = DriverManager.getConnection(banco.getJdbcUrl(), banco.getUsername(), banco.getPassword())) {
+                try (var stmt = conexao.prepareStatement("""
+                        insert into animal (id, brinco_rgd, data_nascimento, sexo, categoria_atual, status, origem)
+                        values (?, 'AQUISICAO-MIGRATION', '2019-04-10', 'FEMEA', 'VACA', 'ATIVO', 'COMPRA')
+                        """)) {
+                    stmt.setObject(1, animalId);
+                    stmt.executeUpdate();
+                }
+
+                try (var stmt = conexao.prepareStatement("""
+                        insert into aquisicao_animal (id, animal_id, data_aquisicao, valor_aquisicao)
+                        values (?, ?, '2021-05-10', 3200.00)
+                        """)) {
+                    stmt.setObject(1, UUID.randomUUID());
+                    stmt.setObject(2, animalId);
+                    stmt.executeUpdate();
+                }
+
+                assertThatThrownBy(() -> conexao.createStatement().executeUpdate("""
+                        insert into aquisicao_animal (id, animal_id, valor_aquisicao)
+                        values (uuid_generate_v4(), '%s', 0)
+                        """.formatted(animalId)))
+                        .isInstanceOf(SQLException.class).extracting("SQLState").isEqualTo("23514");
+                assertThatThrownBy(() -> conexao.createStatement().executeUpdate("""
+                        insert into aquisicao_animal (id, animal_id)
+                        values (uuid_generate_v4(), '%s')
+                        """.formatted(animalId)))
+                        .isInstanceOf(SQLException.class).extracting("SQLState").isEqualTo("23514");
+
+                try (var stmt = conexao.prepareStatement("delete from animal where id = ?")) {
+                    stmt.setObject(1, animalId);
+                    stmt.executeUpdate();
+                }
+                try (var rs = conexao.createStatement().executeQuery("select count(*) from aquisicao_animal")) {
+                    assertThat(rs.next()).isTrue();
+                    assertThat(rs.getInt(1)).isZero();
+                }
+            }
+        }
+    }
+
+    @Test
     @DisplayName("@spec:AC-332 @spec:AC-318 V8 para V9 preserva legado com origem DESCONHECIDO")
     void migraLegadoV8() throws Exception {
         try (var banco = new PostgreSQLContainer("postgres:17-alpine")) {
@@ -54,7 +105,7 @@ class RebanhoPostgresIT {
                         insert into animal (brinco_rgd, data_nascimento, sexo, categoria_atual, status)
                         values ('LEGADO', '2020-05-10', 'FEMEA', 'VACA', 'ATIVO')
                         """);
-                assertThat(migrador(banco, "latest").migrate().migrationsExecuted).isEqualTo(1);
+                assertThat(migrador(banco, "latest").migrate().migrationsExecuted).isEqualTo(2);
                 migrador(banco, "latest").validate();
                 try (var rs = stmt.executeQuery("select origem, data_nascimento, categoria_atual from animal where brinco_rgd = 'LEGADO'")) {
                     assertThat(rs.next()).isTrue();

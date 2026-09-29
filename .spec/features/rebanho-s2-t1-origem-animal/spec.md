@@ -254,6 +254,69 @@ confundir histórico de origem com a operação de nascimento ou de compra.
 - **Então** `recarregarDados()` será executado uma única vez após a chamada
   correspondente
 
+### US-316 — Registrar dados históricos de aquisição
+
+Como produtor, quero registrar os dados conhecidos da aquisição de um animal
+já existente, para preservar seu custo econômico sem lançar uma compra atual
+nem contaminar o Financeiro.
+
+#### AC-349 — Compra histórica pode existir sem data ou valor conhecidos
+
+- **Dado** um cadastro inicial válido com origem `COMPRA` e sem data ou valor
+  histórico
+- **Quando** o animal for cadastrado
+- **Então** o `Animal` será salvo com origem `COMPRA`, nenhuma
+  `AquisicaoAnimal` será criada e nenhuma transação financeira será gerada
+
+#### AC-350 — Dados conhecidos de compra geram `AquisicaoAnimal`
+
+- **Dado** um cadastro inicial válido com origem `COMPRA`, data e valor
+  históricos válidos
+- **Quando** o animal for cadastrado
+- **Então** será criada uma única `AquisicaoAnimal` referenciando o animal
+  correto e preservando os dados informados
+
+#### AC-351 — Data e valor históricos são opcionais independentemente
+
+- **Dado** um cadastro inicial com origem `COMPRA`
+- **Quando** somente a data ou somente o valor histórico for conhecido
+- **Então** o cadastro será aceito e a `AquisicaoAnimal` preservará o campo
+  conhecido, mantendo o outro como `null`
+
+#### AC-352 — Dados de aquisição são permitidos somente para origem `COMPRA`
+
+- **Dado** um cadastro inicial com origem `NASCIMENTO` ou `DESCONHECIDO`
+  e algum dado histórico de aquisição
+- **Quando** o cadastro for solicitado
+- **Então** a operação será rejeitada antes de qualquer persistência
+
+#### AC-353 — Dados históricos inválidos são rejeitados
+
+- **Dado** um cadastro inicial com valor menor ou igual a zero, data futura ou
+  data de aquisição anterior à data de nascimento
+- **Quando** o cadastro for solicitado
+- **Então** a operação será rejeitada antes de persistir animal, pesagem ou
+  aquisição
+
+#### AC-354 — Aquisição histórica não gera lançamento financeiro
+
+- **Dado** um cadastro inicial com origem `COMPRA` e valor histórico conhecido
+- **Quando** o animal for cadastrado
+- **Então** o número de linhas em `transacao_financeira` permanecerá inalterado
+
+#### AC-355 — Animal, pesagem e aquisição são persistidos atomicamente
+
+- **Dado** um cadastro inicial com pesagem e aquisição histórica
+- **Quando** ocorrer falha ao salvar a `AquisicaoAnimal`
+- **Então** o animal, a pesagem e a aquisição não permanecerão parcialmente
+  persistidos
+
+#### AC-356 — Exclusão física não deixa aquisição órfã
+
+- **Dado** um animal com `AquisicaoAnimal` cadastrado
+- **Quando** o animal for excluído fisicamente por correção de cadastro
+- **Então** a aquisição histórica correspondente também será removida
+
 ## Decisões de modelagem
 
 - `OrigemAnimal` é um enum de domínio associado à entidade `Animal`.
@@ -290,6 +353,18 @@ confundir histórico de origem com a operação de nascimento ou de compra.
 - O custo de aquisição pertence ao animal. A composição futura do custo do
   lote deverá partir dos animais e não acumular uma compra diretamente em um
   campo mutável do lote.
+- `AquisicaoAnimal` é a relação opcional 1:0..1 que guarda os dados econômicos
+  conhecidos da aquisição do animal; `dataCompraHistorica` e
+  `valorCompraHistorico` não são colunas de `Animal`.
+- Data e valor históricos são opcionais e independentes. Quando ambos forem
+  desconhecidos, nenhuma `AquisicaoAnimal` será criada; nunca serão usados
+  zero ou a data atual como substitutos.
+- Dados históricos de aquisição somente são aceitos quando a origem do animal
+  for `COMPRA`. O valor histórico é custo de aquisição do animal, não uma
+  `Despesa`, lançamento financeiro ou saída de caixa atual.
+- A aquisição histórica e a pesagem inicial participam da mesma transação do
+  cadastro. A migration V10 cria a tabela com valor positivo, ao menos um
+  dado conhecido, unicidade por animal e FK com `ON DELETE CASCADE`.
 - A ausência de custo ou de data histórica será representada pela ausência de
   informação definida pelo modelo, nunca por zero ou por uma data fictícia.
 - O frontend separa `FluxoCadastroAnimal` (operação `EXISTENTE` ou
@@ -307,14 +382,14 @@ confundir histórico de origem com a operação de nascimento ou de compra.
 - `TipoEntradaAnimal` e `OrigemHistoricaAnimal`.
 - Frontend fora do modal coberto pela US-315, Financeiro e custos de lote.
 - Importação por planilha.
-- Datas estimadas e valores históricos de compra.
-- Peso de compra, peso de nascimento, data de compra, valor de compra e campos
-  de custo no animal.
+- Alterar a regra de negócio do peso de nascimento está fora de escopo; o campo
+  existente e preservado pelo fluxo `Novo nascimento` continua válido.
+- Peso de compra e campos de custo calculado diretamente em `Animal`.
 - Edição de pesagem, novo campo de jejum e qualquer alteração visual no
   frontend fora do modal coberto pela US-315.
-- A compra operacional no frontend, a tarefa T-506 e qualquer alteração no
-  backend, migrations ou contratos operacionais fora do necessário para o
-  fluxo de nascimento.
+- A compra operacional no frontend, a apresentação dos campos históricos no
+  modal e qualquer alteração nos contratos operacionais fora do necessário
+  para o fluxo de nascimento.
 - Alterações em migrations já existentes e `OrigemAnimal`.
 - Alterações nos endpoints operacionais existentes, especialmente
   `POST /api/v1/animais`, e em `AnimalInputDTO`.
@@ -328,6 +403,7 @@ confundir histórico de origem com a operação de nascimento ou de compra.
 | ASM-503 | A resposta de sucesso do cadastro inicial seguirá o padrão do endpoint de animais atual. | confirmada | A API retorna `201 Created` com o UUID do animal no corpo. |
 | ASM-504 | O comportamento atual exigido pelo campo `jejum` deve ser preservado, sem nova decisão de domínio nesta task. | confirmada | A T-504 trata somente peso, data da pesagem e `OrigemPesagem.CADASTRO_INICIAL`; não adiciona campo nem altera a semântica de jejum. |
 | ASM-505 | O endpoint oficial da T-504 é `POST /api/v1/animais/cadastrar`. | confirmada | A T-503 já definiu e implementou esse contrato; a menção a `/cadastro` foi descartada como divergência textual. |
+| ASM-506 | O custo e a data históricos precisam de ciclo próprio, separado de `Animal` e `Despesa`. | confirmada | A T-506 usa `AquisicaoAnimal`; o dado econômico acompanha o animal sem criar movimentação financeira atual. |
 
 ## Perguntas em aberto
 

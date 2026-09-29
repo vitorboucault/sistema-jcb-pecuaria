@@ -58,13 +58,25 @@ class CadastroInicialHttpTest {
                 """.formatted(brinco, nascimento, origem, pesoJson, dataPesagemJson);
     }
 
+    private String payloadComAquisicao(String brinco, String origem, String nascimento,
+                                       String dataCompra, String valorCompra) {
+        String dataJson = dataCompra == null ? "null" : "\"" + dataCompra + "\"";
+        String valorJson = valorCompra == null ? "null" : valorCompra;
+        return """
+                {"brincoRgd":"%s","dataNascimento":"%s","sexo":"FEMEA",
+                 "categoria":"VACA","origem":"%s","dataCompraHistorica":%s,
+                 "valorCompraHistorico":%s}
+                """.formatted(brinco, nascimento, origem, dataJson, valorJson);
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"COMPRA", "NASCIMENTO", "DESCONHECIDO"})
-    @DisplayName("@spec:AC-330 @spec:AC-322 @spec:AC-325 @spec:AC-335 Cadastro autenticado persiste origem sem efeitos operacionais")
+    @DisplayName("@spec:AC-330 @spec:AC-322 @spec:AC-325 @spec:AC-335 @spec:AC-349 Cadastro autenticado persiste origem sem efeitos operacionais")
     void cadastraSemEfeitosOperacionais(String origem) throws Exception {
         String brinco = "HTTP-" + UUID.randomUUID();
         Long despesasAntes = jdbc.queryForObject("select count(*) from transacao_financeira", Long.class);
         Long pesagensAntes = jdbc.queryForObject("select count(*) from pesagem", Long.class);
+        Long aquisicoesAntes = jdbc.queryForObject("select count(*) from aquisicao_animal", Long.class);
         String resposta = mvc.perform(post("/api/v1/animais/cadastrar")
                         .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
                         .content(payload(brinco, origem, "2020-05-10")))
@@ -80,6 +92,51 @@ class CadastroInicialHttpTest {
         assertThat(animal.get("data_morte")).isNull();
         assertThat(jdbc.queryForObject("select count(*) from transacao_financeira", Long.class)).isEqualTo(despesasAntes);
         assertThat(jdbc.queryForObject("select count(*) from pesagem", Long.class)).isEqualTo(pesagensAntes);
+        assertThat(jdbc.queryForObject("select count(*) from aquisicao_animal", Long.class)).isEqualTo(aquisicoesAntes);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-350 @spec:AC-354 Compra histórica persiste aquisição sem criar financeiro")
+    void cadastraCompraHistoricaComDataEValorSemFinanceiro() throws Exception {
+        String brinco = "AQUISICAO-" + UUID.randomUUID();
+        Long despesasAntes = jdbc.queryForObject("select count(*) from transacao_financeira", Long.class);
+
+        String resposta = mvc.perform(post("/api/v1/animais/cadastrar")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payloadComAquisicao(brinco, "COMPRA", "2019-04-10", "2021-05-10", "3200.00")))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        UUID animalId = UUID.fromString(resposta.replace("\"", ""));
+        entityManager.flush();
+
+        var aquisicao = jdbc.queryForMap("select animal_id, data_aquisicao, valor_aquisicao from aquisicao_animal where animal_id = ?", animalId);
+        assertThat(aquisicao.get("animal_id")).isEqualTo(animalId);
+        assertThat(aquisicao.get("data_aquisicao").toString()).isEqualTo("2021-05-10");
+        assertThat(((Number) aquisicao.get("valor_aquisicao")).doubleValue()).isEqualTo(3200.00);
+        assertThat(jdbc.queryForObject("select count(*) from transacao_financeira", Long.class)).isEqualTo(despesasAntes);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-351 Compra histórica aceita somente a data ou somente o valor")
+    void cadastraCompraHistoricaComCamposIndependentes() throws Exception {
+        String brincoData = "A-D-" + UUID.randomUUID();
+        String brincoValor = "A-V-" + UUID.randomUUID();
+        mvc.perform(post("/api/v1/animais/cadastrar").header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payloadComAquisicao(brincoData, "COMPRA", "2019-04-10", "2021-05-10", null)))
+                .andExpect(status().isCreated());
+        mvc.perform(post("/api/v1/animais/cadastrar").header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payloadComAquisicao(brincoValor, "COMPRA", "2019-04-10", null, "3200.00")))
+                .andExpect(status().isCreated());
+        entityManager.flush();
+
+        var somenteData = jdbc.queryForMap("select data_aquisicao, valor_aquisicao from aquisicao_animal a join animal on animal.id = a.animal_id where animal.brinco_rgd = ?", brincoData);
+        var somenteValor = jdbc.queryForMap("select data_aquisicao, valor_aquisicao from aquisicao_animal a join animal on animal.id = a.animal_id where animal.brinco_rgd = ?", brincoValor);
+        assertThat(somenteData.get("data_aquisicao").toString()).isEqualTo("2021-05-10");
+        assertThat(somenteData.get("valor_aquisicao")).isNull();
+        assertThat(somenteValor.get("data_aquisicao")).isNull();
+        assertThat(((Number) somenteValor.get("valor_aquisicao")).doubleValue()).isEqualTo(3200.00);
     }
 
     @Test

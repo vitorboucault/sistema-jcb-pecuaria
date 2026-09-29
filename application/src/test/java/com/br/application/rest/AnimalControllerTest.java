@@ -259,6 +259,26 @@ class AnimalControllerTest {
     }
 
     @Test
+    @DisplayName("@spec:AC-350 Cadastro inicial pela API encaminha data e valor da aquisição histórica")
+    void cadastrarAnimalInicialEncaminhaDadosDeAquisicaoHistorica() throws Exception {
+        RegistrarAnimalInicialUseCase useCase = mock(RegistrarAnimalInicialUseCase.class);
+        when(useCase.executar(any())).thenReturn(UUID.randomUUID());
+        MockMvc mockMvc = criarMockMvcCadastro(criarControllerCadastro(useCase, null));
+
+        mockMvc.perform(post("/api/v1/animais/cadastrar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"brincoRgd":"NOVILHA-002","dataNascimento":"2019-04-10","sexo":"FEMEA","categoria":"VACA","origem":"COMPRA","dataCompraHistorica":"2021-05-10","valorCompraHistorico":3200.00}
+                                """))
+                .andExpect(status().isCreated());
+
+        ArgumentCaptor<RegistrarAnimalInicialCommand> captor = ArgumentCaptor.forClass(RegistrarAnimalInicialCommand.class);
+        verify(useCase).executar(captor.capture());
+        assertThat(captor.getValue().dataCompraHistorica()).isEqualTo(LocalDate.of(2021, 5, 10));
+        assertThat(captor.getValue().valorCompraHistorico()).isEqualByComparingTo("3200.00");
+    }
+
+    @Test
     @DisplayName("@spec:AC-327 @spec:AC-335 Cadastro inicial pela API aceita lote e peso ausentes")
     void cadastrarAnimalInicialAceitaLoteAusente() throws Exception {
         RegistrarAnimalInicialUseCase useCase = mock(RegistrarAnimalInicialUseCase.class);

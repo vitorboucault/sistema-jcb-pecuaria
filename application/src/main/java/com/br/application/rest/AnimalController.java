@@ -140,7 +140,9 @@ public class AnimalController {
                 request.loteId(),
                 request.origem(),
                 request.pesoAtual(),
-                request.dataPesagem()
+                request.dataPesagem(),
+                request.dataCompraHistorica(),
+                request.valorCompraHistorico()
         ));
         return ResponseEntity.status(201).body(animalId);
     }
