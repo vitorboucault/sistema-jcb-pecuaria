@@ -145,6 +145,44 @@ describe('Rebanho renderizado', () => {
         expect(within(lote).getAllByRole('option')[0].textContent).toContain('Sem lote');
     });
 
+    it('@spec:AC-370 cadastro existente inicia nascimento vazio e nascimento operacional continua obrigatório', async () => {
+        const user = userEvent.setup();
+        render(<RebanhoPage />);
+        await screen.findByText(ativo.brincoRgd);
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+
+        const nascimentoHistorico = screen.getByLabelText('Data de nascimento (opcional)') as HTMLInputElement;
+        expect(nascimentoHistorico.value).toBe('');
+        expect(nascimentoHistorico.required).toBe(false);
+        expect(screen.getByLabelText('Data da pesagem')).toHaveProperty('max');
+
+        await user.type(screen.getByLabelText('Brinco / RGD *'), 'HIST-SEM-NASCIMENTO');
+        await user.click(screen.getByRole('button', { name: 'Salvar Animal' }));
+        await waitFor(() => expect(rebanhoService.cadastrarAnimalInicial).toHaveBeenCalledOnce());
+        expect(rebanhoService.cadastrarAnimalInicial).toHaveBeenCalledWith(expect.objectContaining({
+            dataNascimento: null,
+        }));
+
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+        await user.click(screen.getByRole('button', { name: 'Novo nascimento' }));
+        const nascimentoOperacional = screen.getByLabelText('Data de nascimento *') as HTMLInputElement;
+        expect(nascimentoOperacional.required).toBe(true);
+        expect(nascimentoOperacional.value).not.toBe('');
+
+        await user.click(screen.getByRole('button', { name: 'Animal já existente' }));
+        expect((screen.getByLabelText('Data de nascimento (opcional)') as HTMLInputElement).value).toBe('');
+    });
+
+    it('@spec:AC-370 aquisição histórica não aplica nascimento mínimo quando ele é desconhecido', async () => {
+        const user = userEvent.setup();
+        render(<RebanhoPage />);
+        await screen.findByText(ativo.brincoRgd);
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+        await user.selectOptions(screen.getByRole('combobox', { name: 'Origem histórica *' }), 'COMPRA');
+
+        expect((screen.getByLabelText('Data da compra') as HTMLInputElement).min).toBe('');
+    });
+
     it('@spec:AC-343 envia peso atual e data da pesagem juntos no cadastro histórico', async () => {
         const user = userEvent.setup();
         render(<RebanhoPage />);
@@ -188,8 +226,8 @@ describe('Rebanho renderizado', () => {
         render(<RebanhoPage />);
         await screen.findByText(ativo.brincoRgd);
         await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
-        await user.clear(screen.getByLabelText('Data de nascimento *'));
-        await user.type(screen.getByLabelText('Data de nascimento *'), '2019-04-10');
+        await user.clear(screen.getByLabelText('Data de nascimento (opcional)'));
+        await user.type(screen.getByLabelText('Data de nascimento (opcional)'), '2019-04-10');
         await user.selectOptions(screen.getByRole('combobox', { name: 'Origem histórica *' }), 'COMPRA');
         await user.type(screen.getByLabelText('Brinco / RGD *'), 'HIST-DATA');
         await user.type(screen.getByLabelText('Data da compra'), '2021-05-10');
@@ -206,8 +244,8 @@ describe('Rebanho renderizado', () => {
         render(<RebanhoPage />);
         await screen.findByText(ativo.brincoRgd);
         await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
-        await user.clear(screen.getByLabelText('Data de nascimento *'));
-        await user.type(screen.getByLabelText('Data de nascimento *'), '2019-04-10');
+        await user.clear(screen.getByLabelText('Data de nascimento (opcional)'));
+        await user.type(screen.getByLabelText('Data de nascimento (opcional)'), '2019-04-10');
         await user.selectOptions(screen.getByRole('combobox', { name: 'Origem histórica *' }), 'COMPRA');
         await user.type(screen.getByLabelText('Brinco / RGD *'), 'HIST-VALOR');
         await user.type(screen.getByLabelText('Valor da compra (R$)'), '3200');
@@ -224,8 +262,8 @@ describe('Rebanho renderizado', () => {
         render(<RebanhoPage />);
         await screen.findByText(ativo.brincoRgd);
         await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
-        await user.clear(screen.getByLabelText('Data de nascimento *'));
-        await user.type(screen.getByLabelText('Data de nascimento *'), '2019-04-10');
+        await user.clear(screen.getByLabelText('Data de nascimento (opcional)'));
+        await user.type(screen.getByLabelText('Data de nascimento (opcional)'), '2019-04-10');
         await user.selectOptions(screen.getByRole('combobox', { name: 'Origem histórica *' }), 'COMPRA');
         await user.type(screen.getByLabelText('Brinco / RGD *'), 'HIST-COMPRA');
         await user.type(screen.getByLabelText('Data da compra'), '2021-05-10');
@@ -423,5 +461,23 @@ describe('Rebanho renderizado', () => {
         expect(existente).not.toHaveProperty('dataEntrada');
         expect(existente).not.toHaveProperty('dataCompra');
         expect(existente).not.toHaveProperty('valorCompra');
+    });
+
+    it('@spec:AC-371 edição de animal sem nascimento abre vazia e salva null', async () => {
+        const user = userEvent.setup();
+        const animalSemNascimento: Animal = { ...ativo, id: 'sem-nascimento', brincoRgd: 'SEM-NASCIMENTO', dataNascimento: null };
+        vi.mocked(rebanhoService.listarAnimais).mockResolvedValue([animalSemNascimento]);
+        render(<RebanhoPage />);
+        await screen.findByText(animalSemNascimento.brincoRgd);
+
+        await user.click(linha(animalSemNascimento.brincoRgd).getByTitle('Editar'));
+        const dataNascimento = screen.getByLabelText('Data de Nascimento (opcional)') as HTMLInputElement;
+        expect(dataNascimento.value).toBe('');
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        await waitFor(() => expect(rebanhoService.atualizarAnimal).toHaveBeenCalledWith(
+            animalSemNascimento.id,
+            expect.objectContaining({ dataNascimento: null }),
+        ));
     });
 });

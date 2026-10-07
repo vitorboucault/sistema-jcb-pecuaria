@@ -102,7 +102,7 @@ public class RegistrarAnimalInicialUseCase {
         if (command.dataPesagem().isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("A data da pesagem não pode ser futura.");
         }
-        if (command.dataPesagem().isBefore(command.dataNascimento())) {
+        if (command.dataNascimento() != null && command.dataPesagem().isBefore(command.dataNascimento())) {
             throw new IllegalArgumentException("A data da pesagem não pode ser anterior à data de nascimento.");
         }
 
@@ -119,10 +119,7 @@ public class RegistrarAnimalInicialUseCase {
         if (command.brincoRgd() == null || command.brincoRgd().isBlank()) {
             throw new IllegalArgumentException("O brinco/RGD é obrigatório.");
         }
-        if (command.dataNascimento() == null) {
-            throw new IllegalArgumentException("A data de nascimento é obrigatória.");
-        }
-        if (command.dataNascimento().isAfter(LocalDate.now())) {
+        if (command.dataNascimento() != null && command.dataNascimento().isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("A data de nascimento não pode ser futura.");
         }
         if (command.sexo() == null) {

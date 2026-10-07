@@ -50,7 +50,8 @@ export const AnimalModalForm = ({
     const [dataCompraHistorica, setDataCompraHistorica] = useState('');
     const [valorCompraHistorico, setValorCompraHistorico] = useState('');
     const [pesoNascimento, setPesoNascimento] = useState('35');
-    const [dataNascimento, setDataNascimento] = useState(hojeLocal);
+    const [dataNascimentoExistente, setDataNascimentoExistente] = useState('');
+    const [dataNascimentoNascimento, setDataNascimento] = useState(hojeLocal);
     const [loteId, setLoteId] = useState('');
     const [maeId, setMaeId] = useState('');
     const [carregando, setCarregando] = useState(false);
@@ -67,6 +68,7 @@ export const AnimalModalForm = ({
         setDataCompraHistorica('');
         setValorCompraHistorico('');
         setPesoNascimento('35');
+        setDataNascimentoExistente('');
         setDataNascimento(hojeLocal());
         setLoteId('');
         setMaeId('');
@@ -86,6 +88,9 @@ export const AnimalModalForm = ({
         setDataCompraHistorica('');
         setValorCompraHistorico('');
         if (novoFluxo === 'NASCIMENTO') {
+            if (!dataNascimento) {
+                setDataNascimento(hojeLocal());
+            }
             setCategoria(sexo === 'MACHO' ? 'BEZERRO' : 'BEZERRA');
         }
     };
@@ -116,6 +121,14 @@ export const AnimalModalForm = ({
                 setErro('Peso atual e data da pesagem devem ser informados juntos.');
                 return;
             }
+            if (dataPesagem && dataPesagem > hojeLocal()) {
+                setErro('A data da pesagem não pode ser futura.');
+                return;
+            }
+            if (dataPesagem && dataNascimentoExistente && dataPesagem < dataNascimentoExistente) {
+                setErro('A data da pesagem não pode ser anterior à data de nascimento.');
+                return;
+            }
 
             if (origem === 'COMPRA') {
                 const valorInformado = valorCompraHistorico.trim() !== '';
@@ -127,7 +140,7 @@ export const AnimalModalForm = ({
                     setErro('A data da compra histórica não pode ser futura.');
                     return;
                 }
-                if (dataCompraHistorica && dataNascimento && dataCompraHistorica < dataNascimento) {
+                if (dataCompraHistorica && dataNascimentoExistente && dataCompraHistorica < dataNascimentoExistente) {
                     setErro('A data da compra histórica não pode ser anterior à data de nascimento.');
                     return;
                 }
@@ -146,7 +159,7 @@ export const AnimalModalForm = ({
                         brincoRgd,
                         categoria,
                         sexo,
-                        dataNascimento,
+                        dataNascimento: dataNascimentoExistente || null,
                         ...(lote ? { loteId: lote } : {}),
                         ...(pesoAtual.trim() !== '' && dataPesagem
                             ? { pesoAtual: Number(pesoAtual), dataPesagem }
@@ -167,7 +180,7 @@ export const AnimalModalForm = ({
                         categoria,
                         sexo,
                         peso: Number(pesoNascimento),
-                        dataNascimento,
+                        dataNascimento: dataNascimento,
                         dataEntrada: dataNascimento,
                         ...(maeId ? { maeId } : {}),
                         ...(lote ? { loteId: lote } : {}),
@@ -185,6 +198,7 @@ export const AnimalModalForm = ({
     };
 
     const isNascimento = fluxo === 'NASCIMENTO';
+    const dataNascimento = isNascimento ? dataNascimentoNascimento : dataNascimentoExistente;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -298,7 +312,7 @@ export const AnimalModalForm = ({
                                     <input
                                         id="data-compra-historica"
                                         type="date"
-                                        min={dataNascimento}
+                                        min={dataNascimentoExistente || undefined}
                                         max={hojeLocal()}
                                         value={dataCompraHistorica}
                                         onChange={(e) => setDataCompraHistorica(e.target.value)}
@@ -375,14 +389,21 @@ export const AnimalModalForm = ({
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="data-nascimento" className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
-                                Data de nascimento *
+                                {isNascimento ? 'Data de nascimento *' : 'Data de nascimento'}
                             </label>
                             <input
                                 id="data-nascimento"
                                 type="date"
-                                required
+                                required={isNascimento}
                                 value={dataNascimento}
-                                onChange={(e) => setDataNascimento(e.target.value)}
+                                max={hojeLocal()}
+                                onChange={(e) => {
+                                    if (isNascimento) {
+                                        setDataNascimento(e.target.value);
+                                    } else {
+                                        setDataNascimentoExistente(e.target.value);
+                                    }
+                                }}
                                 className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 font-mono"
                             />
                         </div>
@@ -394,6 +415,7 @@ export const AnimalModalForm = ({
                                 <input
                                     id="data-pesagem"
                                     type="date"
+                                    max={hojeLocal()}
                                     value={dataPesagem}
                                     onChange={(e) => setDataPesagem(e.target.value)}
                                     className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 font-mono"

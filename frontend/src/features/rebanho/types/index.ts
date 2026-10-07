@@ -22,7 +22,7 @@ export interface Animal {
     nomeLote?: string;
     pesoAtual: number | null;
     status: StatusAnimal;
-    dataNascimento: string;
+    dataNascimento: string | null;
     dataMorte?: string | null;
 }
 
@@ -52,7 +52,7 @@ export interface CadastrarAnimalInicialInput {
     brincoRgd: string;
     categoria: CategoriaAnimal;
     sexo: 'MACHO' | 'FEMEA';
-    dataNascimento: string;
+    dataNascimento: string | null;
     loteId?: string;
     pesoAtual?: number;
     dataPesagem?: string;
@@ -80,7 +80,7 @@ export type CadastrarAnimalInput = CadastrarNascimentoInput;
 
 export interface AtualizarAnimalInput {
     brincoRgd: string;
-    dataNascimento: string;
+    dataNascimento: string | null;
     sexo: 'MACHO' | 'FEMEA';
     categoria: CategoriaAnimal;
 }

@@ -21,7 +21,7 @@ public class AnimalEntity {
     @Column(name = "brinco_rgd", unique = true, nullable = false, length = 50)
     private String brincoRgd;
 
-    @Column(name = "data_nascimento", nullable = false)
+    @Column(name = "data_nascimento")
     private LocalDate dataNascimento;
 
     @Column(nullable = false, length = 10)

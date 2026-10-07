@@ -60,4 +60,17 @@ class EvoluirCategoriaUseCaseTest {
         // Apenas 3 animais evoluíram e devem ser persistidos
         verify(animalRepository, times(3)).salvar(any(Animal.class));
     }
+
+    @Test
+    @DisplayName("@spec:AC-367 Evolução automática ignora animal sem nascimento conhecido")
+    void naoDevePersistirEvolucaoSemDataNascimento() {
+        Animal animal = new Animal(UUID.randomUUID(), "SEM-DATA-EVOLUCAO", null,
+                Sexo.MACHO, Categoria.BEZERRO, Status.ATIVO, null, null, null, null);
+        when(animalRepository.buscarAnimaisElegiveisParaEvolucao()).thenReturn(List.of(animal));
+
+        useCase.executar();
+
+        assertThat(animal.getCategoriaAtual()).isEqualTo(Categoria.BEZERRO);
+        verify(animalRepository, never()).salvar(any(Animal.class));
+    }
 }

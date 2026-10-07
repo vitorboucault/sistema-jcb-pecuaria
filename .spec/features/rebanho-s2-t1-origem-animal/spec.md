@@ -1,7 +1,7 @@
 # Spec: Modelar origem do animal
 
 > feature: rebanho-s2-t1-origem-animal
-> status: em-implementacao
+> status: implementada
 
 ## Contexto
 
@@ -371,6 +371,90 @@ compra financeira atual.
 - **Então** a origem voltará a `DESCONHECIDO` e os campos históricos estarão
   vazios
 
+### US-318 — Cadastrar animal existente sem data de nascimento conhecida
+
+Como produtor, quero cadastrar um animal já existente mesmo quando não conheço
+sua data de nascimento, para migrar meu plantel sem inventar informações
+históricas.
+
+#### AC-364 — Cadastro inicial aceita data de nascimento desconhecida
+
+- **Dado** um animal histórico válido com `dataNascimento = null` ou com o
+  campo ausente no request
+- **Quando** ele for enviado para `POST /api/v1/animais/cadastrar`
+- **Então** o cadastro será aceito, o `Animal.dataNascimento` será `null` e
+  nenhuma data substituta será inferida ou persistida
+
+#### AC-365 — Novo nascimento continua exigindo data de nascimento
+
+- **Dado** um cadastro pelo fluxo `Novo nascimento` com
+  `dataNascimento = null`
+- **Quando** o caso de uso ou endpoint operacional for executado
+- **Então** a operação será rejeitada com a regra de data de nascimento
+  obrigatória, sem alterar a validação existente do nascimento operacional
+
+#### AC-366 — Pesagem e aquisição comparam datas somente quando o nascimento é conhecido
+
+- **Dado** um cadastro inicial com nascimento conhecido
+- **Quando** a data da pesagem ou da aquisição histórica for anterior ao
+  nascimento
+- **Então** o cadastro será rejeitado
+- **E**, dado um cadastro inicial com `dataNascimento = null`, uma pesagem ou
+  aquisição histórica não futura e válida será aceita sem comparação com
+  nascimento
+- **E** a pesagem continuará exigindo peso e data juntos, a aquisição
+  continuará preservando `valorCompraHistorico > 0` quando informado e ambas
+  continuarão rejeitando datas futuras
+
+#### AC-367 — Animal sem nascimento conhecido não evolui automaticamente por idade
+
+- **Dado** um animal com `dataNascimento = null`
+- **Quando** `avaliarEvolucaoPorIdade()` for executado
+- **Então** o método retornará `false`, não lançará exceção e não alterará a
+  categoria
+- **E** a evolução não inferirá idade a partir da categoria ou do peso
+
+#### AC-368 — Operações que exigem idade falham explicitamente quando a data é desconhecida
+
+- **Dado** um animal com `dataNascimento = null`
+- **Quando** `registrarDesmame()` for executado
+- **Então** a operação será rejeitada com erro de negócio explícito equivalente
+  a `A data de nascimento é necessária para validar a idade do animal.`
+- **E** não ocorrerá `NullPointerException` nem a regra de idade será ignorada
+
+#### AC-369 — API e persistência preservam data de nascimento nula
+
+- **Dado** um cadastro inicial histórico válido com `dataNascimento = null`
+- **Quando** ele for persistido e consultado pela API
+- **Então** `animal.data_nascimento` aceitará `NULL`, os registros existentes
+  com data permanecerão inalterados, o endpoint retornará `201 Created` e o
+  JSON de saída conterá `"dataNascimento": null`
+- **E** o backend não substituirá `null` por string vazia, data atual ou data
+  fictícia
+
+#### AC-370 — Frontend diferencia data opcional no cadastro existente de data obrigatória no novo nascimento
+
+- **Dado** que o fluxo `Animal já existente` esteja selecionado
+- **Quando** o formulário for exibido e enviado sem data de nascimento
+- **Então** o rótulo será `Data de nascimento (opcional)`, o campo iniciará
+  vazio e o payload enviará `null` ou ausência real
+- **E**, ao selecionar `Novo nascimento`, o formulário exibirá a data como
+  obrigatória e enviará `dataNascimento` preenchida
+- **E** alternar os fluxos não transportará automaticamente a data atual
+  como nascimento histórico
+- **E** com nascimento desconhecido o frontend não aplicará `min` de nascimento
+  para pesagem ou aquisição histórica
+
+#### AC-371 — Animal com nascimento desconhecido permanece editável
+
+- **Dado** um animal retornado com `dataNascimento = null`
+- **Quando** o formulário de edição for aberto e salvo sem informar nascimento
+- **Então** o campo será apresentado vazio, outras alterações poderão ser
+  salvas e `dataNascimento` permanecerá `null`
+- **E** será possível corrigir posteriormente `null` para uma data conhecida ou
+  uma data conhecida para `null`, sem transformar a correção cadastral em
+  evento operacional
+
 ## Decisões de modelagem
 
 - `OrigemAnimal` é um enum de domínio associado à entidade `Animal`.
@@ -440,6 +524,39 @@ compra financeira atual.
   histórico pode enviar `pesoAtual` e `dataPesagem` somente em conjunto; o
   fluxo de nascimento envia somente seu peso ao nascer e a data do nascimento
   como data da pesagem operacional existente.
+- `Animal.dataNascimento` pode ser `null` para representar um animal histórico
+  cujo nascimento é desconhecido. Construtores de nascimento real e os fluxos
+  operacionais de nascimento e compra continuam exigindo uma data válida;
+  somente construtores de reconstituição/persistência e o cadastro inicial
+  aceitam `null`.
+- O cadastro inicial valida a data de nascimento somente quando ela está
+  presente: datas passadas ou atuais são válidas e datas futuras são rejeitadas.
+  `null` não é substituído por data de entrada, compra, data atual ou estimativa.
+- A validação de `Pesagem` compara `dataPesagem` com `dataNascimento` apenas
+  quando o nascimento é conhecido. Com nascimento desconhecido, uma pesagem
+  não futura continua válida quando peso e data são informados juntos.
+- A validação de `AquisicaoAnimal` preserva a comparação com o nascimento
+  quando ambas as datas existem. Com nascimento desconhecido, a data histórica
+  de aquisição pode ser aceita se não for futura; a modelagem de
+  `AquisicaoAnimal` não será alterada.
+- `avaliarEvolucaoPorIdade()` retorna `false` para nascimento desconhecido,
+  sem inferir idade por categoria ou peso. `registrarDesmame()` rejeita essa
+  situação com erro de negócio explícito porque a idade mínima não pode ser
+  validada.
+- `AtualizarAnimalRequest`, `AtualizarAnimalCommand`,
+  `AtualizarAnimalUseCase` e `Animal.atualizarDadosCadastrais(...)` preservam
+  `null` como valor cadastral válido. A edição pode manter a ausência ou
+  corrigir posteriormente a data, sem representar um evento operacional.
+- `AnimalResumoDTO` e o contrato TypeScript usam `string | null` para
+  `dataNascimento`. O backend serializa `null`; o frontend normaliza `null`
+  para `''` somente no input e converte `''` de volta para `null` no envio.
+- No fluxo `EXISTENTE`, o campo começa vazio e é rotulado
+  `Data de nascimento (opcional)`. No fluxo `NASCIMENTO`, a data continua
+  obrigatória e pode iniciar com a data atual. Os estados dos fluxos devem ser
+  isolados para que a data atual não vaze para o cadastro histórico.
+- A migração futura será `V11__Allow_Null_Data_Nascimento_Animal.sql`, com
+  `ALTER TABLE animal ALTER COLUMN data_nascimento DROP NOT NULL`. V1 e todas
+  as migrations anteriores permanecem imutáveis.
 
 ## Fora de escopo
 
@@ -468,6 +585,8 @@ compra financeira atual.
 | ASM-505 | O endpoint oficial da T-504 é `POST /api/v1/animais/cadastrar`. | confirmada | A T-503 já definiu e implementou esse contrato; a menção a `/cadastro` foi descartada como divergência textual. |
 | ASM-506 | O custo e a data históricos precisam de ciclo próprio, separado de `Animal` e `Despesa`. | confirmada | A T-506 usa `AquisicaoAnimal`; o dado econômico acompanha o animal sem criar movimentação financeira atual. |
 | ASM-507 | O backend da T-506 já aceita os campos históricos e o frontend apenas os encaminha. | confirmada | O contrato de `POST /api/v1/animais/cadastrar` recebe `dataCompraHistorica` e `valorCompraHistorico`; nenhum endpoint ou migration novo é necessário. |
+| ASM-508 | O contrato REST continuará tratando campo ausente e `null` como nascimento desconhecido. | confirmada | A implementação mantém `LocalDate` anulável no request e delega `null` ao command, sem valor padrão. |
+| ASM-509 | A correção cadastral poderá limpar uma data previamente conhecida. | confirmada | A edição continuará sendo uma atualização de dados cadastrais e não criará evento operacional. |
 
 ## Perguntas em aberto
 

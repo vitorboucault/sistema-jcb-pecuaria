@@ -21,6 +21,9 @@ public class RegistrarNascimentoUseCase {
     }
     @Transactional
     public UUID executar(RegistrarNascimentoCommand command){
+        if (command.dataNascimento() == null) {
+            throw new IllegalArgumentException("A data de nascimento é obrigatória.");
+        }
         if (animalRepository.buscarPorBrinco(command.brincoRgd()).isPresent()) {
             throw new IllegalArgumentException("Erro: Já existe um animal com o brinco " + command.brincoRgd());
         }

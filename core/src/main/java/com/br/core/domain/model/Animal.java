@@ -28,6 +28,9 @@ public class Animal {
 
     public Animal(String brincoRgd, LocalDate dataNascimento, Sexo sexo, UUID maeId, UUID loteInicial,
                   OrigemAnimal origem) {
+        if (dataNascimento == null) {
+            throw new IllegalArgumentException("A data de nascimento é obrigatória.");
+        }
         if (dataNascimento.isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("O bezerro nao pode nascer no futuro.");
         }
@@ -65,6 +68,9 @@ public class Animal {
     }
 
     public void registrarDesmame() {
+        if (this.dataNascimento == null) {
+            throw new IllegalStateException("A data de nascimento é necessária para validar a idade do animal.");
+        }
         long mesesIdade = ChronoUnit.MONTHS.between(this.dataNascimento, LocalDate.now());
         if (mesesIdade < 8) {
             throw new IllegalStateException("Animal muito jovem para desmame precoce (Minimo 8 meses).");
@@ -97,7 +103,7 @@ public class Animal {
     }
 
     public boolean avaliarEvolucaoPorIdade() {
-        if (this.status != Status.ATIVO) {
+        if (this.status != Status.ATIVO || this.dataNascimento == null) {
             return false;
         }
         long mesesIdade = ChronoUnit.MONTHS.between(this.dataNascimento, LocalDate.now());
@@ -141,10 +147,7 @@ public class Animal {
         if (brincoRgd == null || brincoRgd.isBlank()) {
             throw new IllegalArgumentException("O brinco/RGD é obrigatório.");
         }
-        if (dataNascimento == null) {
-            throw new IllegalArgumentException("A data de nascimento é obrigatória.");
-        }
-        if (dataNascimento.isAfter(LocalDate.now())) {
+        if (dataNascimento != null && dataNascimento.isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("O bezerro nao pode nascer no futuro.");
         }
         if (sexo == null) {

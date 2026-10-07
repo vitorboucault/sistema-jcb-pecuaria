@@ -131,4 +131,24 @@ class AtualizarAnimalUseCaseTest {
         assertThat(animal.getDataMorte()).isEqualTo(dataMorte);
         assertThat(animal.getLoteId()).isEqualTo(loteId);
     }
+
+    @Test
+    @DisplayName("@spec:AC-371 Edição mantém nascimento desconhecido")
+    void deveAtualizarAnimalSemDataNascimento() {
+        UUID animalId = UUID.randomUUID();
+        Animal animal = new Animal(animalId, "SEM-DATA", null, Sexo.FEMEA,
+                Categoria.VACA, Status.ATIVO, null, null, null, null);
+        AtualizarAnimalCommand command = new AtualizarAnimalCommand(
+                animalId, "SEM-DATA-CORRIGIDO", null, Sexo.FEMEA, Categoria.VACA
+        );
+
+        when(animalRepository.buscarPorId(animalId)).thenReturn(Optional.of(animal));
+        when(animalRepository.buscarPorBrinco(command.brincoRgd())).thenReturn(Optional.empty());
+
+        useCase.executar(command);
+
+        verify(animalRepository).salvar(animal);
+        assertThat(animal.getDataNascimento()).isNull();
+        assertThat(animal.getBrincoRgd()).isEqualTo("SEM-DATA-CORRIGIDO");
+    }
 }

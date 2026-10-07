@@ -29,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -128,6 +129,21 @@ class RegistrarCompraAnimalUseCaseTest {
                 .hasMessageContaining("Erro: Já existe um animal com o brinco");
 
         verify(animalRepository, never()).salvar(any());
+    }
+
+    @Test
+    @DisplayName("@spec:AC-365 Compra operacional rejeita data de nascimento nula")
+    void deveRejeitarCompraSemDataNascimento() {
+        RegistrarCompraAnimalCommand command = new RegistrarCompraAnimalCommand(
+                "COMPRA-SEM-NASCIMENTO", null, Sexo.FEMEA, Categoria.VACA,
+                null, null, null
+        );
+
+        assertThatThrownBy(() -> useCase.executar(command))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A data de nascimento é obrigatória.");
+
+        verifyNoInteractions(animalRepository, despesaRepository);
     }
 
     @Test

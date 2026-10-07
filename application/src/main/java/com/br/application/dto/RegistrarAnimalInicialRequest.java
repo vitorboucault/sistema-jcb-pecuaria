@@ -14,7 +14,6 @@ public record RegistrarAnimalInicialRequest(
         @NotBlank(message = "O brinco/RGD é obrigatório.")
         String brincoRgd,
 
-        @NotNull(message = "A data de nascimento é obrigatória.")
         LocalDate dataNascimento,
 
         @NotNull(message = "O sexo é obrigatório.")

@@ -79,6 +79,20 @@ class RegistrarNascimentoUseCaseTest {
     }
 
     @Test
+    @DisplayName("@spec:AC-365 Novo nascimento rejeita data de nascimento nula")
+    void deveRejeitarNascimentoSemData() {
+        RegistrarNascimentoCommand command = new RegistrarNascimentoCommand(
+                "BEZ-SEM-DATA", null, Sexo.MACHO, null
+        );
+
+        assertThatThrownBy(() -> useCase.executar(command))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A data de nascimento é obrigatória.");
+
+        verifyNoInteractions(animalRepository);
+    }
+
+    @Test
     @DisplayName("@spec:AC-311 Deve barrar registro se a mãe informada for do sexo macho")
     void deveBarrarMaeMacho() {
         UUID touroId = UUID.randomUUID();

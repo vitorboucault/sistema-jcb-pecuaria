@@ -52,21 +52,23 @@ class CadastroInicialHttpTest {
     private String payload(String brinco, String origem, String nascimento, Double pesoAtual, String dataPesagem) {
         String pesoJson = pesoAtual == null ? "null" : pesoAtual.toString();
         String dataPesagemJson = dataPesagem == null ? "null" : "\"" + dataPesagem + "\"";
+        String nascimentoJson = nascimento == null ? "null" : "\"" + nascimento + "\"";
         return """
-                {"brincoRgd":"%s","dataNascimento":"%s","sexo":"FEMEA",
+                {"brincoRgd":"%s","dataNascimento":%s,"sexo":"FEMEA",
                  "categoria":"VACA","origem":"%s","pesoAtual":%s,"dataPesagem":%s}
-                """.formatted(brinco, nascimento, origem, pesoJson, dataPesagemJson);
+                """.formatted(brinco, nascimentoJson, origem, pesoJson, dataPesagemJson);
     }
 
     private String payloadComAquisicao(String brinco, String origem, String nascimento,
                                        String dataCompra, String valorCompra) {
         String dataJson = dataCompra == null ? "null" : "\"" + dataCompra + "\"";
         String valorJson = valorCompra == null ? "null" : valorCompra;
+        String nascimentoJson = nascimento == null ? "null" : "\"" + nascimento + "\"";
         return """
-                {"brincoRgd":"%s","dataNascimento":"%s","sexo":"FEMEA",
+                {"brincoRgd":"%s","dataNascimento":%s,"sexo":"FEMEA",
                  "categoria":"VACA","origem":"%s","dataCompraHistorica":%s,
                  "valorCompraHistorico":%s}
-                """.formatted(brinco, nascimento, origem, dataJson, valorJson);
+                """.formatted(brinco, nascimentoJson, origem, dataJson, valorJson);
     }
 
     @ParameterizedTest
@@ -93,6 +95,25 @@ class CadastroInicialHttpTest {
         assertThat(jdbc.queryForObject("select count(*) from transacao_financeira", Long.class)).isEqualTo(despesasAntes);
         assertThat(jdbc.queryForObject("select count(*) from pesagem", Long.class)).isEqualTo(pesagensAntes);
         assertThat(jdbc.queryForObject("select count(*) from aquisicao_animal", Long.class)).isEqualTo(aquisicoesAntes);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-364 @spec:AC-369 Cadastro histórico sem nascimento persiste null")
+    void cadastraSemDataNascimento() throws Exception {
+        String brinco = "HTTP-SEM-NASC-" + UUID.randomUUID();
+
+        String resposta = mvc.perform(post("/api/v1/animais/cadastrar")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload(brinco, "DESCONHECIDO", null)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        UUID animalId = UUID.fromString(resposta.replace("\"", ""));
+        entityManager.flush();
+
+        var animal = jdbc.queryForMap("select data_nascimento, origem from animal where id = ?", animalId);
+        assertThat(animal.get("data_nascimento")).isNull();
+        assertThat(animal).containsEntry("origem", "DESCONHECIDO");
     }
 
     @Test

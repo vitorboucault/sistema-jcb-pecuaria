@@ -14,6 +14,8 @@ import com.br.core.domain.repository.AnimalRepository;
 import com.br.core.domain.repository.LoteRepository;
 import com.br.core.domain.repository.PesagemRepository;
 import com.br.usecase.manejo.ReverterMorteAnimalUseCase;
+import com.br.usecase.manejo.AtualizarAnimalUseCase;
+import com.br.usecase.dto.AtualizarAnimalCommand;
 import com.br.usecase.manejo.RegistrarAnimalInicialUseCase;
 import com.br.usecase.manejo.RegistrarCompraAnimalUseCase;
 import com.br.usecase.dto.RegistrarAnimalInicialCommand;
@@ -42,6 +44,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
@@ -64,14 +67,14 @@ class AnimalControllerTest {
     }
 
     @Test
-    @DisplayName("@spec:AC-107 Listagem de animais busca lotes e ultimas pesagens em lote")
+    @DisplayName("@spec:AC-107 @spec:AC-369 Listagem de animais preserva nascimento nulo")
     void listarBuscaLotesEUltimasPesagensEmLote() {
         UUID loteId = UUID.randomUUID();
         UUID animalComLoteId = UUID.randomUUID();
         UUID animalSemLoteId = UUID.randomUUID();
         Animal animalComLote = new Animal(animalComLoteId, "A-001", LocalDate.now().minusYears(1), Sexo.MACHO,
                 Categoria.BEZERRO, Status.ATIVO, null, loteId);
-        Animal animalSemLote = new Animal(animalSemLoteId, "A-002", LocalDate.now().minusYears(2), Sexo.FEMEA,
+        Animal animalSemLote = new Animal(animalSemLoteId, "A-002", null, Sexo.FEMEA,
                 Categoria.NOVILHA, Status.ATIVO, null, null);
         Lote lote = new Lote(loteId, "Lote 01", FaseLote.RECRIA, LocalDate.now().minusMonths(1), null);
         Pesagem ultimaPesagem = new Pesagem(UUID.randomUUID(), animalComLoteId, LocalDate.now().minusDays(2), 245.5, false);
@@ -105,6 +108,7 @@ class AnimalControllerTest {
         assertThat(pagina.conteudo().getFirst().pesoAtual()).isEqualTo(245.5);
         assertThat(pagina.conteudo().get(1).nomeLote()).isNull();
         assertThat(pagina.conteudo().get(1).pesoAtual()).isNull();
+        assertThat(pagina.conteudo().get(1).dataNascimento()).isNull();
         assertThat(loteRepository.buscarPorIdsChamadas).isEqualTo(1);
         assertThat(loteRepository.buscarPorIdChamadas).isZero();
         assertThat(loteRepository.idsBuscados).containsExactly(loteId);
@@ -238,6 +242,71 @@ class AnimalControllerTest {
     }
 
     @Test
+    @DisplayName("@spec:AC-364 API de cadastro inicial aceita nascimento nulo")
+    void cadastrarAnimalInicialAceitaNascimentoNulo() throws Exception {
+        UUID animalId = UUID.randomUUID();
+        RegistrarAnimalInicialUseCase useCase = mock(RegistrarAnimalInicialUseCase.class);
+        when(useCase.executar(any())).thenReturn(animalId);
+        MockMvc mockMvc = criarMockMvcCadastro(criarControllerCadastro(useCase, null));
+
+        mockMvc.perform(post("/api/v1/animais/cadastrar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"brincoRgd":"HIST-SEM-NASCIMENTO","dataNascimento":null,"sexo":"FEMEA","categoria":"VACA","origem":"DESCONHECIDO"}
+                                """))
+                .andExpect(status().isCreated());
+
+        ArgumentCaptor<RegistrarAnimalInicialCommand> captor = ArgumentCaptor.forClass(RegistrarAnimalInicialCommand.class);
+        verify(useCase).executar(captor.capture());
+        assertThat(captor.getValue().dataNascimento()).isNull();
+    }
+
+    @Test
+    @DisplayName("@spec:AC-365 Endpoint operacional continua exigindo nascimento")
+    void endpointOperacionalRejeitaNascimentoNulo() throws Exception {
+        var nascimentoUseCase = mock(com.br.usecase.manejo.RegistrarNascimentoUseCase.class);
+        AnimalController controller = new AnimalController(
+                nascimentoUseCase, null, null, null, null, null, null, null, null, null, null, null, null
+        );
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setMessageConverters(new JacksonJsonHttpMessageConverter())
+                .build();
+
+        mockMvc.perform(post("/api/v1/animais")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"origem":"NASCIMENTO","brincoRgd":"BEZ-SEM-DATA","categoria":"BEZERRO","sexo":"MACHO","dataNascimento":null}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(nascimentoUseCase);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-371 API de edição aceita nascimento nulo")
+    void editarAnimalAceitaNascimentoNulo() throws Exception {
+        UUID animalId = UUID.randomUUID();
+        AtualizarAnimalUseCase useCase = mock(AtualizarAnimalUseCase.class);
+        AnimalController controller = new AnimalController(
+                null, null, null, null, null, null, null, null, null, useCase, null, null, null
+        );
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setMessageConverters(new JacksonJsonHttpMessageConverter())
+                .build();
+
+        mockMvc.perform(put("/api/v1/animais/{id}", animalId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"brincoRgd":"HIST-SEM-DATA","dataNascimento":null,"sexo":"FEMEA","categoria":"VACA"}
+                                """))
+                .andExpect(status().isNoContent());
+
+        ArgumentCaptor<AtualizarAnimalCommand> captor = ArgumentCaptor.forClass(AtualizarAnimalCommand.class);
+        verify(useCase).executar(captor.capture());
+        assertThat(captor.getValue().dataNascimento()).isNull();
+    }
+
+    @Test
     @DisplayName("@spec:AC-326 Cadastro inicial pela API preserva COMPRA sem acionar compra operacional")
     void cadastrarAnimalInicialComCompraUsaSomenteCasoDeUsoInicial() throws Exception {
         RegistrarAnimalInicialUseCase useCase = mock(RegistrarAnimalInicialUseCase.class);
@@ -317,7 +386,6 @@ class AnimalControllerTest {
     private static Stream<String> requestsInvalidosParaCadastroInicial() {
         return Stream.of(
                 "{\"brincoRgd\":\" \" ,\"dataNascimento\":\"2020-05-10\",\"sexo\":\"FEMEA\",\"categoria\":\"VACA\",\"origem\":\"NASCIMENTO\"}",
-                "{\"brincoRgd\":\"VACA-001\",\"sexo\":\"FEMEA\",\"categoria\":\"VACA\",\"origem\":\"NASCIMENTO\"}",
                 "{\"brincoRgd\":\"VACA-001\",\"dataNascimento\":\"2020-05-10\",\"categoria\":\"VACA\",\"origem\":\"NASCIMENTO\"}",
                 "{\"brincoRgd\":\"VACA-001\",\"dataNascimento\":\"2020-05-10\",\"sexo\":\"FEMEA\",\"origem\":\"NASCIMENTO\"}",
                 "{\"brincoRgd\":\"VACA-001\",\"dataNascimento\":\"2020-05-10\",\"sexo\":\"FEMEA\",\"categoria\":\"VACA\"}",

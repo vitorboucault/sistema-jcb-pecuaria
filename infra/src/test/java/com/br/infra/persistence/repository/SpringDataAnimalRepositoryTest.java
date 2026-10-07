@@ -38,6 +38,22 @@ class SpringDataAnimalRepositoryTest {
     }
 
     @Test
+    @DisplayName("@spec:AC-369 Persistência aceita nascimento desconhecido como null")
+    void devePersistirDataNascimentoNula() {
+        AnimalEntity animal = new AnimalEntity(
+                UUID.randomUUID(), "SEM-NASCIMENTO-PERSISTIDO", null,
+                null, "FEMEA", "VACA", "ATIVO", null
+        );
+
+        animalRepository.save(animal);
+
+        assertThat(animalRepository.findByBrincoRgd("SEM-NASCIMENTO-PERSISTIDO"))
+                .get()
+                .extracting(AnimalEntity::getDataNascimento)
+                .isNull();
+    }
+
+    @Test
     @DisplayName("Deve salvar e buscar um animal ativo pelo brinco RGD com sucesso no PostgreSQL")
     void deveSalvarEBuscarAnimalPorBrinco() {
         UUID animalId = UUID.randomUUID();

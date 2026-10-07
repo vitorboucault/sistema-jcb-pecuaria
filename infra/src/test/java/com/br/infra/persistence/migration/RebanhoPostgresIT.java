@@ -25,7 +25,7 @@ class RebanhoPostgresIT {
         try (var banco = new PostgreSQLContainer("postgres:17-alpine")) {
             banco.start();
             var flyway = migrador(banco, "latest");
-            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(10);
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(11);
             flyway.validate();
             try (var conexao = DriverManager.getConnection(banco.getJdbcUrl(), banco.getUsername(), banco.getPassword())) {
                 for (String origem : new String[]{"COMPRA", "NASCIMENTO", "DESCONHECIDO"}) {
@@ -49,7 +49,7 @@ class RebanhoPostgresIT {
         try (var banco = new PostgreSQLContainer("postgres:17-alpine")) {
             banco.start();
             var flyway = migrador(banco, "latest");
-            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(10);
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(11);
 
             UUID animalId = UUID.randomUUID();
             try (var conexao = DriverManager.getConnection(banco.getJdbcUrl(), banco.getUsername(), banco.getPassword())) {
@@ -105,7 +105,7 @@ class RebanhoPostgresIT {
                         insert into animal (brinco_rgd, data_nascimento, sexo, categoria_atual, status)
                         values ('LEGADO', '2020-05-10', 'FEMEA', 'VACA', 'ATIVO')
                         """);
-                assertThat(migrador(banco, "latest").migrate().migrationsExecuted).isEqualTo(2);
+                assertThat(migrador(banco, "latest").migrate().migrationsExecuted).isEqualTo(3);
                 migrador(banco, "latest").validate();
                 try (var rs = stmt.executeQuery("select origem, data_nascimento, categoria_atual from animal where brinco_rgd = 'LEGADO'")) {
                     assertThat(rs.next()).isTrue();
@@ -120,6 +120,49 @@ class RebanhoPostgresIT {
                 try (var rs = stmt.executeQuery("select origem from animal where brinco_rgd = 'SEM-ORIGEM'")) {
                     assertThat(rs.next()).isTrue();
                     assertThat(rs.getString(1)).isEqualTo("DESCONHECIDO");
+                }
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("@spec:AC-369 V11 permite nascimento nulo e preserva datas legadas")
+    void v11PermiteNascimentoNuloSemAlterarRegistrosExistentes() throws Exception {
+        try (var banco = new PostgreSQLContainer("postgres:17-alpine")) {
+            banco.start();
+            var flyway = migrador(banco, "latest");
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(11);
+
+            try (var conexao = DriverManager.getConnection(banco.getJdbcUrl(), banco.getUsername(), banco.getPassword())) {
+                try (var stmt = conexao.prepareStatement("""
+                        insert into animal (id, brinco_rgd, data_nascimento, sexo, categoria_atual, status, origem)
+                        values (?, ?, ?, 'FEMEA', 'VACA', 'ATIVO', 'DESCONHECIDO')
+                        """)) {
+                    stmt.setObject(1, UUID.randomUUID());
+                    stmt.setString(2, "V11-COM-DATA");
+                    stmt.setDate(3, java.sql.Date.valueOf("2020-05-10"));
+                    stmt.executeUpdate();
+                }
+                try (var stmt = conexao.prepareStatement("""
+                        insert into animal (id, brinco_rgd, data_nascimento, sexo, categoria_atual, status, origem)
+                        values (?, ?, NULL, 'FEMEA', 'VACA', 'ATIVO', 'DESCONHECIDO')
+                        """)) {
+                    stmt.setObject(1, UUID.randomUUID());
+                    stmt.setString(2, "V11-SEM-DATA");
+                    stmt.executeUpdate();
+                }
+
+                try (var stmt = conexao.prepareStatement("select data_nascimento from animal where brinco_rgd = ?")) {
+                    stmt.setString(1, "V11-COM-DATA");
+                    try (var rs = stmt.executeQuery()) {
+                        assertThat(rs.next()).isTrue();
+                        assertThat(rs.getDate(1).toLocalDate()).isEqualTo("2020-05-10");
+                    }
+                    stmt.setString(1, "V11-SEM-DATA");
+                    try (var rs = stmt.executeQuery()) {
+                        assertThat(rs.next()).isTrue();
+                        assertThat(rs.getDate(1)).isNull();
+                    }
                 }
             }
         }

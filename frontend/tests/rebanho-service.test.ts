@@ -51,6 +51,21 @@ describe('cadastro do animal', () => {
         expect(api.post).toHaveBeenCalledWith('v1/animais/cadastrar', dados);
     });
 
+    it('@spec:AC-364 service preserva nascimento desconhecido como null', async () => {
+        vi.mocked(api.post).mockResolvedValue({ data: 'animal-sem-nascimento' });
+
+        const dados = {
+            origem: 'DESCONHECIDO' as const,
+            brincoRgd: 'BR-SEM-NASCIMENTO',
+            categoria: 'VACA' as const,
+            sexo: 'FEMEA' as const,
+            dataNascimento: null,
+        };
+
+        await expect(rebanhoService.cadastrarAnimalInicial(dados)).resolves.toBe('animal-sem-nascimento');
+        expect(api.post).toHaveBeenCalledWith('v1/animais/cadastrar', dados);
+    });
+
     it('@spec:AC-359 preserva dados de aquisição histórica no POST do cadastro inicial', async () => {
         vi.mocked(api.post).mockResolvedValue({ data: 'animal-compra-historica' });
 

@@ -86,6 +86,55 @@ class RegistrarAnimalInicialUseCaseTest {
     }
 
     @Test
+    @DisplayName("@spec:AC-364 Cadastro inicial aceita nascimento desconhecido como null")
+    void deveRegistrarAnimalInicialSemDataNascimento() {
+        RegistrarAnimalInicialCommand command = new RegistrarAnimalInicialCommand(
+                "INI-SEM-NASCIMENTO", null, Sexo.FEMEA, Categoria.VACA, null,
+                OrigemAnimal.DESCONHECIDO
+        );
+        when(animalRepository.buscarPorBrinco(command.brincoRgd())).thenReturn(Optional.empty());
+
+        useCase.executar(command);
+
+        ArgumentCaptor<Animal> captor = ArgumentCaptor.forClass(Animal.class);
+        verify(animalRepository).salvar(captor.capture());
+        assertThat(captor.getValue().getDataNascimento()).isNull();
+    }
+
+    @Test
+    @DisplayName("@spec:AC-366 Pesagem inicial é aceita quando o nascimento é desconhecido")
+    void devePermitirPesagemSemDataNascimento() {
+        RegistrarAnimalInicialCommand command = commandComPesagem(
+                OrigemAnimal.DESCONHECIDO, 385.5, LocalDate.now().minusDays(1), null
+        );
+        when(animalRepository.buscarPorBrinco(command.brincoRgd())).thenReturn(Optional.empty());
+
+        UUID animalId = useCase.executar(command);
+
+        ArgumentCaptor<Pesagem> captor = ArgumentCaptor.forClass(Pesagem.class);
+        verify(pesagemRepository).salvar(captor.capture());
+        assertThat(captor.getValue().getAnimalId()).isEqualTo(animalId);
+        assertThat(captor.getValue().getDataPesagem()).isEqualTo(command.dataPesagem());
+    }
+
+    @Test
+    @DisplayName("@spec:AC-366 Aquisição histórica é aceita quando o nascimento é desconhecido")
+    void devePermitirAquisicaoSemDataNascimento() {
+        LocalDate dataCompra = LocalDate.now().minusYears(2);
+        RegistrarAnimalInicialCommand command = commandComAquisicao(
+                OrigemAnimal.COMPRA, dataCompra, new BigDecimal("3200.00"), null
+        );
+        when(animalRepository.buscarPorBrinco(command.brincoRgd())).thenReturn(Optional.empty());
+
+        UUID animalId = useCase.executar(command);
+
+        ArgumentCaptor<AquisicaoAnimal> captor = ArgumentCaptor.forClass(AquisicaoAnimal.class);
+        verify(aquisicaoAnimalRepository).salvar(captor.capture());
+        assertThat(captor.getValue().getAnimalId()).isEqualTo(animalId);
+        assertThat(captor.getValue().getDataAquisicao()).isEqualTo(dataCompra);
+    }
+
+    @Test
     @DisplayName("@spec:AC-322 @spec:AC-349 Cadastro inicial com compra histórica sem dados não cria aquisição nem operação")
     void deveRegistrarCompraHistoricaSemAcionarCompraOperacional() {
         RegistrarAnimalInicialCommand command = commandValido(OrigemAnimal.COMPRA, UUID.randomUUID());
@@ -213,20 +262,6 @@ class RegistrarAnimalInicialUseCaseTest {
         assertThatThrownBy(() -> useCase.executar(command))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("O brinco/RGD é obrigatório.");
-
-        verify(animalRepository, never()).salvar(any());
-    }
-
-    @Test
-    @DisplayName("@spec:AC-324 Cadastro inicial rejeita data de nascimento nula antes da persistência")
-    void deveRejeitarDataNascimentoNula() {
-        RegistrarAnimalInicialCommand command = new RegistrarAnimalInicialCommand(
-                "INI-002", null, Sexo.FEMEA, Categoria.VACA, null, OrigemAnimal.NASCIMENTO
-        );
-
-        assertThatThrownBy(() -> useCase.executar(command))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("A data de nascimento é obrigatória.");
 
         verify(animalRepository, never()).salvar(any());
     }
