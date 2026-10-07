@@ -164,6 +164,173 @@ describe('Rebanho renderizado', () => {
         }));
     });
 
+    it('@spec:AC-357 exibe dados históricos somente para origem COMPRA', async () => {
+        const user = userEvent.setup();
+        render(<RebanhoPage />);
+        await screen.findByText(ativo.brincoRgd);
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+
+        expect(screen.queryByLabelText('Data da compra')).toBeNull();
+        expect(screen.queryByLabelText('Valor da compra (R$)')).toBeNull();
+
+        const origem = screen.getByRole('combobox', { name: 'Origem histórica *' });
+        await user.selectOptions(origem, 'COMPRA');
+        expect(screen.getByLabelText('Data da compra')).toBeDefined();
+        expect(screen.getByLabelText('Valor da compra (R$)')).toBeDefined();
+
+        await user.selectOptions(origem, 'NASCIMENTO');
+        expect(screen.queryByLabelText('Data da compra')).toBeNull();
+        expect(screen.queryByLabelText('Valor da compra (R$)')).toBeNull();
+    });
+
+    it('@spec:AC-358 aceita somente a data ou somente o valor histórico', async () => {
+        const user = userEvent.setup();
+        render(<RebanhoPage />);
+        await screen.findByText(ativo.brincoRgd);
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+        await user.clear(screen.getByLabelText('Data de nascimento *'));
+        await user.type(screen.getByLabelText('Data de nascimento *'), '2019-04-10');
+        await user.selectOptions(screen.getByRole('combobox', { name: 'Origem histórica *' }), 'COMPRA');
+        await user.type(screen.getByLabelText('Brinco / RGD *'), 'HIST-DATA');
+        await user.type(screen.getByLabelText('Data da compra'), '2021-05-10');
+        await user.click(screen.getByRole('button', { name: 'Salvar Animal' }));
+
+        await waitFor(() => expect(rebanhoService.cadastrarAnimalInicial).toHaveBeenCalledOnce());
+        const somenteData = vi.mocked(rebanhoService.cadastrarAnimalInicial).mock.calls[0][0];
+        expect(somenteData).toMatchObject({ dataCompraHistorica: '2021-05-10' });
+        expect(somenteData).not.toHaveProperty('valorCompraHistorico');
+    });
+
+    it('@spec:AC-358 aceita somente o valor histórico', async () => {
+        const user = userEvent.setup();
+        render(<RebanhoPage />);
+        await screen.findByText(ativo.brincoRgd);
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+        await user.clear(screen.getByLabelText('Data de nascimento *'));
+        await user.type(screen.getByLabelText('Data de nascimento *'), '2019-04-10');
+        await user.selectOptions(screen.getByRole('combobox', { name: 'Origem histórica *' }), 'COMPRA');
+        await user.type(screen.getByLabelText('Brinco / RGD *'), 'HIST-VALOR');
+        await user.type(screen.getByLabelText('Valor da compra (R$)'), '3200');
+        await user.click(screen.getByRole('button', { name: 'Salvar Animal' }));
+
+        await waitFor(() => expect(rebanhoService.cadastrarAnimalInicial).toHaveBeenCalledOnce());
+        const somenteValor = vi.mocked(rebanhoService.cadastrarAnimalInicial).mock.calls[0][0];
+        expect(somenteValor).toMatchObject({ valorCompraHistorico: 3200 });
+        expect(somenteValor).not.toHaveProperty('dataCompraHistorica');
+    });
+
+    it('@spec:AC-359 envia data e valor históricos ao cadastro inicial', async () => {
+        const user = userEvent.setup();
+        render(<RebanhoPage />);
+        await screen.findByText(ativo.brincoRgd);
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+        await user.clear(screen.getByLabelText('Data de nascimento *'));
+        await user.type(screen.getByLabelText('Data de nascimento *'), '2019-04-10');
+        await user.selectOptions(screen.getByRole('combobox', { name: 'Origem histórica *' }), 'COMPRA');
+        await user.type(screen.getByLabelText('Brinco / RGD *'), 'HIST-COMPRA');
+        await user.type(screen.getByLabelText('Data da compra'), '2021-05-10');
+        await user.type(screen.getByLabelText('Valor da compra (R$)'), '3200');
+        await user.click(screen.getByRole('button', { name: 'Salvar Animal' }));
+
+        await waitFor(() => expect(rebanhoService.cadastrarAnimalInicial).toHaveBeenCalledOnce());
+        expect(rebanhoService.cadastrarAnimalInicial).toHaveBeenCalledWith(expect.objectContaining({
+            origem: 'COMPRA',
+            brincoRgd: 'HIST-COMPRA',
+            dataCompraHistorica: '2021-05-10',
+            valorCompraHistorico: 3200,
+        }));
+    });
+
+    it('@spec:AC-360 omite dados históricos quando nenhum deles é conhecido', async () => {
+        const user = userEvent.setup();
+        render(<RebanhoPage />);
+        await screen.findByText(ativo.brincoRgd);
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+        await user.selectOptions(screen.getByRole('combobox', { name: 'Origem histórica *' }), 'COMPRA');
+        await user.type(screen.getByLabelText('Brinco / RGD *'), 'HIST-SEM-DADOS');
+        await user.click(screen.getByRole('button', { name: 'Salvar Animal' }));
+
+        await waitFor(() => expect(rebanhoService.cadastrarAnimalInicial).toHaveBeenCalledOnce());
+        const semDados = vi.mocked(rebanhoService.cadastrarAnimalInicial).mock.calls[0][0];
+        expect(semDados).not.toHaveProperty('dataCompraHistorica');
+        expect(semDados).not.toHaveProperty('valorCompraHistorico');
+        expect(Object.values(semDados)).not.toContain('');
+        expect(Object.values(semDados)).not.toContain(0);
+    });
+
+    it('@spec:AC-361 remove dados ao trocar COMPRA para DESCONHECIDO', async () => {
+        const user = userEvent.setup();
+        render(<RebanhoPage />);
+        await screen.findByText(ativo.brincoRgd);
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+        const origem = screen.getByRole('combobox', { name: 'Origem histórica *' });
+        await user.selectOptions(origem, 'COMPRA');
+        await user.type(screen.getByLabelText('Data da compra'), '2021-05-10');
+        await user.type(screen.getByLabelText('Valor da compra (R$)'), '3200');
+        await user.selectOptions(origem, 'DESCONHECIDO');
+        await user.type(screen.getByLabelText('Brinco / RGD *'), 'HIST-TROCA');
+        await user.click(screen.getByRole('button', { name: 'Salvar Animal' }));
+
+        await waitFor(() => expect(rebanhoService.cadastrarAnimalInicial).toHaveBeenCalledOnce());
+        const desconhecido = vi.mocked(rebanhoService.cadastrarAnimalInicial).mock.calls[0][0];
+        expect(desconhecido).not.toHaveProperty('dataCompraHistorica');
+        expect(desconhecido).not.toHaveProperty('valorCompraHistorico');
+    });
+
+    it('@spec:AC-361 remove dados ao trocar COMPRA para NASCIMENTO histórico', async () => {
+        const user = userEvent.setup();
+        render(<RebanhoPage />);
+        await screen.findByText(ativo.brincoRgd);
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+        const origem = screen.getByRole('combobox', { name: 'Origem histórica *' });
+        await user.selectOptions(origem, 'COMPRA');
+        await user.type(screen.getByLabelText('Data da compra'), '2021-05-10');
+        await user.type(screen.getByLabelText('Valor da compra (R$)'), '3200');
+        await user.selectOptions(origem, 'NASCIMENTO');
+        await user.type(screen.getByLabelText('Brinco / RGD *'), 'HIST-NASC');
+        await user.click(screen.getByRole('button', { name: 'Salvar Animal' }));
+
+        await waitFor(() => expect(rebanhoService.cadastrarAnimalInicial).toHaveBeenCalledOnce());
+        const nascimentoHistorico = vi.mocked(rebanhoService.cadastrarAnimalInicial).mock.calls[0][0];
+        expect(nascimentoHistorico).not.toHaveProperty('dataCompraHistorica');
+        expect(nascimentoHistorico).not.toHaveProperty('valorCompraHistorico');
+    });
+
+    it('@spec:AC-362 novo nascimento nunca recebe dados de aquisição histórica', async () => {
+        const user = userEvent.setup();
+        render(<RebanhoPage />);
+        await screen.findByText(ativo.brincoRgd);
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+        await user.selectOptions(screen.getByRole('combobox', { name: 'Origem histórica *' }), 'COMPRA');
+        await user.type(screen.getByLabelText('Data da compra'), '2021-05-10');
+        await user.type(screen.getByLabelText('Valor da compra (R$)'), '3200');
+        await user.click(screen.getByRole('button', { name: 'Novo nascimento' }));
+        await user.type(screen.getByLabelText('Brinco / RGD *'), 'BEZ-SEM-COMPRA');
+        await user.click(screen.getByRole('button', { name: 'Salvar Animal' }));
+
+        await waitFor(() => expect(rebanhoService.cadastrarNascimento).toHaveBeenCalledOnce());
+        const nascimento = vi.mocked(rebanhoService.cadastrarNascimento).mock.calls[0][0];
+        expect(nascimento).not.toHaveProperty('dataCompraHistorica');
+        expect(nascimento).not.toHaveProperty('valorCompraHistorico');
+    });
+
+    it('@spec:AC-363 limpa os dados de aquisição ao cancelar e reabrir', async () => {
+        const user = userEvent.setup();
+        render(<RebanhoPage />);
+        await screen.findByText(ativo.brincoRgd);
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+        await user.selectOptions(screen.getByRole('combobox', { name: 'Origem histórica *' }), 'COMPRA');
+        await user.type(screen.getByLabelText('Data da compra'), '2021-05-10');
+        await user.type(screen.getByLabelText('Valor da compra (R$)'), '3200');
+        await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+        await user.click(screen.getByRole('button', { name: /Novo Animal/ }));
+
+        expect((screen.getByRole('combobox', { name: 'Origem histórica *' }) as HTMLSelectElement).value).toBe('DESCONHECIDO');
+        await user.selectOptions(screen.getByRole('combobox', { name: 'Origem histórica *' }), 'COMPRA');
+        expect((screen.getByLabelText('Data da compra') as HTMLInputElement).value).toBe('');
+        expect((screen.getByLabelText('Valor da compra (R$)') as HTMLInputElement).value).toBe('');
+    });
+
     it('@spec:AC-344 rejeita peso atual informado sem data da pesagem', async () => {
         const user = userEvent.setup();
         render(<RebanhoPage />);

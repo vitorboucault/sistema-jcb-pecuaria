@@ -51,6 +51,23 @@ describe('cadastro do animal', () => {
         expect(api.post).toHaveBeenCalledWith('v1/animais/cadastrar', dados);
     });
 
+    it('@spec:AC-359 preserva dados de aquisição histórica no POST do cadastro inicial', async () => {
+        vi.mocked(api.post).mockResolvedValue({ data: 'animal-compra-historica' });
+
+        const dados = {
+            origem: 'COMPRA' as const,
+            brincoRgd: 'BR-COMPRA-HISTORICA',
+            categoria: 'VACA' as const,
+            sexo: 'FEMEA' as const,
+            dataNascimento: '2019-04-10',
+            dataCompraHistorica: '2021-05-10',
+            valorCompraHistorico: 3200,
+        };
+
+        await expect(rebanhoService.cadastrarAnimalInicial(dados)).resolves.toBe('animal-compra-historica');
+        expect(api.post).toHaveBeenCalledWith('v1/animais/cadastrar', dados);
+    });
+
     it('@spec:AC-345 preserva nascimento no endpoint operacional', async () => {
         vi.mocked(api.post).mockResolvedValue({ data: 'bezerro' });
 

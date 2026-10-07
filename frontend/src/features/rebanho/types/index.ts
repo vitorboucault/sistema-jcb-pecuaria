@@ -56,6 +56,8 @@ export interface CadastrarAnimalInicialInput {
     loteId?: string;
     pesoAtual?: number;
     dataPesagem?: string;
+    dataCompraHistorica?: string;
+    valorCompraHistorico?: number;
 }
 
 export interface CadastrarNascimentoInput {

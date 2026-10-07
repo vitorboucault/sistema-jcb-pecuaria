@@ -317,6 +317,60 @@ nem contaminar o Financeiro.
 - **Quando** o animal for excluído fisicamente por correção de cadastro
 - **Então** a aquisição histórica correspondente também será removida
 
+### US-317 — Informar aquisição histórica no cadastro do animal
+
+Como produtor, quero informar no cadastro de um animal já existente os dados
+conhecidos de sua compra histórica, para preservar a migração sem criar uma
+compra financeira atual.
+
+#### AC-357 — Campos de aquisição aparecem somente para origem `COMPRA`
+
+- **Dado** o fluxo `Animal já existente`
+- **Quando** a origem for `COMPRA`
+- **Então** o formulário exibirá data e valor da compra histórica, e não os
+  exibirá para `NASCIMENTO` ou `DESCONHECIDO`
+
+#### AC-358 — Data e valor históricos são opcionais independentemente
+
+- **Dado** o fluxo `Animal já existente` com origem `COMPRA`
+- **Quando** somente a data ou somente o valor histórico for informado
+- **Então** o formulário permitirá o cadastro sem exigir o outro campo
+
+#### AC-359 — Dados históricos conhecidos são enviados para o cadastro inicial
+
+- **Dado** o fluxo `Animal já existente` com origem `COMPRA`
+- **Quando** data e/ou valor históricos forem informados
+- **Então** o payload enviado a `POST /api/v1/animais/cadastrar` conterá os
+  campos correspondentes sem alterar o contrato do service
+
+#### AC-360 — Ausência de dados históricos não produz valores fictícios
+
+- **Dado** o fluxo `Animal já existente` com origem `COMPRA`
+- **Quando** nenhum dado histórico for conhecido
+- **Então** o payload não conterá strings vazias, valor zero nem data
+  automática para aquisição
+
+#### AC-361 — Troca de origem remove dados de aquisição incompatíveis
+
+- **Dado** que data e/ou valor históricos tenham sido preenchidos
+- **Quando** a origem mudar de `COMPRA` para `DESCONHECIDO` ou
+  `NASCIMENTO`
+- **Então** os campos serão limpos e não serão enviados no cadastro
+
+#### AC-362 — Novo nascimento nunca recebe dados de aquisição histórica
+
+- **Dado** que o usuário tenha preenchido dados de compra no modal
+- **Quando** trocar para `Novo nascimento` e enviar o formulário
+- **Então** `cadastrarNascimento()` não receberá `dataCompraHistorica` nem
+  `valorCompraHistorico`
+
+#### AC-363 — Formulário reinicia sem dados de aquisição ao ser reaberto
+
+- **Dado** que dados históricos tenham sido preenchidos no modal
+- **Quando** o modal for cancelado e reaberto
+- **Então** a origem voltará a `DESCONHECIDO` e os campos históricos estarão
+  vazios
+
 ## Decisões de modelagem
 
 - `OrigemAnimal` é um enum de domínio associado à entidade `Animal`.
@@ -365,6 +419,16 @@ nem contaminar o Financeiro.
 - A aquisição histórica e a pesagem inicial participam da mesma transação do
   cadastro. A migration V10 cria a tabela com valor positivo, ao menos um
   dado conhecido, unicidade por animal e FK com `ON DELETE CASCADE`.
+- `dataCompraHistorica` e `valorCompraHistorico` pertencem somente ao contrato
+  frontend de cadastro inicial do fluxo `EXISTENTE` com origem `COMPRA`; são
+  enviados opcionalmente ao endpoint já existente, sem novo endpoint.
+- A ausência de data ou valor histórico permanece ausente no payload; o
+  frontend não envia string vazia, zero ou data atual como substituto.
+- Ao deixar `COMPRA`, o formulário limpa os dados históricos. O fluxo
+  `NASCIMENTO` nunca compartilha esses campos e continua usando somente seu
+  contrato operacional.
+- `valorCompraHistorico` é custo histórico de aquisição do animal. Não
+  representa nova despesa, pagamento atual ou saída financeira.
 - A ausência de custo ou de data histórica será representada pela ausência de
   informação definida pelo modelo, nunca por zero ou por uma data fictícia.
 - O frontend separa `FluxoCadastroAnimal` (operação `EXISTENTE` ou
@@ -387,9 +451,8 @@ nem contaminar o Financeiro.
 - Peso de compra e campos de custo calculado diretamente em `Animal`.
 - Edição de pesagem, novo campo de jejum e qualquer alteração visual no
   frontend fora do modal coberto pela US-315.
-- A compra operacional no frontend, a apresentação dos campos históricos no
-  modal e qualquer alteração nos contratos operacionais fora do necessário
-  para o fluxo de nascimento.
+- A compra operacional no frontend e qualquer alteração nos contratos
+  operacionais fora do necessário para o fluxo de nascimento.
 - Alterações em migrations já existentes e `OrigemAnimal`.
 - Alterações nos endpoints operacionais existentes, especialmente
   `POST /api/v1/animais`, e em `AnimalInputDTO`.
@@ -404,6 +467,7 @@ nem contaminar o Financeiro.
 | ASM-504 | O comportamento atual exigido pelo campo `jejum` deve ser preservado, sem nova decisão de domínio nesta task. | confirmada | A T-504 trata somente peso, data da pesagem e `OrigemPesagem.CADASTRO_INICIAL`; não adiciona campo nem altera a semântica de jejum. |
 | ASM-505 | O endpoint oficial da T-504 é `POST /api/v1/animais/cadastrar`. | confirmada | A T-503 já definiu e implementou esse contrato; a menção a `/cadastro` foi descartada como divergência textual. |
 | ASM-506 | O custo e a data históricos precisam de ciclo próprio, separado de `Animal` e `Despesa`. | confirmada | A T-506 usa `AquisicaoAnimal`; o dado econômico acompanha o animal sem criar movimentação financeira atual. |
+| ASM-507 | O backend da T-506 já aceita os campos históricos e o frontend apenas os encaminha. | confirmada | O contrato de `POST /api/v1/animais/cadastrar` recebe `dataCompraHistorica` e `valorCompraHistorico`; nenhum endpoint ou migration novo é necessário. |
 
 ## Perguntas em aberto
 
