@@ -554,9 +554,9 @@ históricas.
   `Data de nascimento (opcional)`. No fluxo `NASCIMENTO`, a data continua
   obrigatória e pode iniciar com a data atual. Os estados dos fluxos devem ser
   isolados para que a data atual não vaze para o cadastro histórico.
-- A migração futura será `V11__Allow_Null_Data_Nascimento_Animal.sql`, com
-  `ALTER TABLE animal ALTER COLUMN data_nascimento DROP NOT NULL`. V1 e todas
-  as migrations anteriores permanecem imutáveis.
+- A migration `V11__Allow_Null_Data_Nascimento_Animal.sql` permite
+  `ALTER TABLE animal ALTER COLUMN data_nascimento DROP NOT NULL`. V1–V10 e
+  todas as migrations anteriores permanecem imutáveis.
 
 ## Fora de escopo
 

@@ -45,7 +45,15 @@ O domínio de **Rebanho** é responsável pelo ciclo de vida completo dos animai
 ### 2.1. Entrada no Rebanho
 - **Nascimento**: Registrado via `RegistrarNascimentoUseCase`, vinculando opcionalmente mãe e lote de cria.
 - **Compra**: Registrado via `RegistrarCompraAnimalUseCase`, com valor de aquisição, data e peso de entrada.
-- **Cadastro inicial**: É uma operação de cadastro, não um valor de `origem`. Quando não houver informação confiável, o animal permanece com origem `DESCONHECIDO`.
+- **Cadastro inicial**: É uma operação de cadastro de animal já existente, exposta por `POST /api/v1/animais/cadastrar`; não representa nova entrada física, compra operacional ou nascimento atual. Quando não houver informação confiável, o animal permanece com origem `DESCONHECIDO`.
+
+O nascimento operacional continua exposto por `POST /api/v1/animais` e exige
+data de nascimento e peso ao nascer. A compra operacional permanece disponível
+no backend, mas não é oferecida pelo modal atual do Rebanho.
+
+No cadastro inicial, `dataNascimento = null` significa nascimento desconhecido.
+O campo pode ser corrigido posteriormente pela edição cadastral sem criar um
+evento operacional.
 
 A origem persistida é independente da operação de cadastro. Operações distintas
 podem convergir para a mesma origem quando o histórico disponível for o mesmo,

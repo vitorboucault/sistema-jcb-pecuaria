@@ -30,6 +30,7 @@ O versionamento do esquema é gerenciado exclusivamente pelo **Flyway**.
 8. `V8__Add_Origem_Pesagem.sql`: Inclusão da coluna `origem` em `pesagem` (`CADASTRO_INICIAL`, `OPERACIONAL`).
 9. `V9__Add_Origem_Animal.sql`: Origem persistida do animal (`COMPRA`, `NASCIMENTO`, `DESCONHECIDO`), com fallback legado `DESCONHECIDO` e constraint de valores permitidos.
 10. `V10__Create_Aquisicao_Animal.sql`: Dados econômicos históricos opcionais da aquisição do animal, com unicidade por animal, valor positivo, ao menos um dado conhecido e FK com `ON DELETE CASCADE`.
+11. `V11__Allow_Null_Data_Nascimento_Animal.sql`: Permite `NULL` em `animal.data_nascimento` para animais históricos cujo nascimento é desconhecido, preservando as datas já existentes.
 
 ---
 

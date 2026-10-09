@@ -85,7 +85,7 @@ Cobre as três origens, ausência de efeitos financeiros/pesagem, dados inválid
 duplicidade e reversão de morte preservando lote posteriormente encerrado.
 
 `bash scripts/check-postgres.sh` executa `RebanhoPostgresIT` em PostgreSQL 17
-descartável via Testcontainers: migrations V1–V10 em banco vazio e V8–V10 com
+descartável via Testcontainers: migrations V1–V11 em banco vazio e V8–V11 com
 animais legados. Docker é obrigatório; sua ausência causa erro, não skip.
 Nenhuma conexão com o banco de uso real é utilizada. A execução completa
 `./scripts/check-all.sh` inclui esta etapa, assim como o job backend do CI.

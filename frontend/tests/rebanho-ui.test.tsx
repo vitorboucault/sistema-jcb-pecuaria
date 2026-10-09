@@ -480,4 +480,38 @@ describe('Rebanho renderizado', () => {
             expect.objectContaining({ dataNascimento: null }),
         ));
     });
+
+    it('@spec:AC-371 edição permite corrigir nascimento desconhecido com uma data', async () => {
+        const user = userEvent.setup();
+        const animalSemNascimento: Animal = { ...ativo, id: 'sem-nascimento-corrigido', brincoRgd: 'SEM-NASCIMENTO-CORRIGIDO', dataNascimento: null };
+        vi.mocked(rebanhoService.listarAnimais).mockResolvedValue([animalSemNascimento]);
+        render(<RebanhoPage />);
+        await screen.findByText(animalSemNascimento.brincoRgd);
+
+        await user.click(linha(animalSemNascimento.brincoRgd).getByTitle('Editar'));
+        const dataNascimento = screen.getByLabelText('Data de Nascimento (opcional)') as HTMLInputElement;
+        await user.type(dataNascimento, '2020-05-10');
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        await waitFor(() => expect(rebanhoService.atualizarAnimal).toHaveBeenCalledWith(
+            animalSemNascimento.id,
+            expect.objectContaining({ dataNascimento: '2020-05-10' }),
+        ));
+    });
+
+    it('@spec:AC-371 edição permite limpar nascimento conhecido', async () => {
+        const user = userEvent.setup();
+        render(<RebanhoPage />);
+        await screen.findByText(ativo.brincoRgd);
+
+        await user.click(linha(ativo.brincoRgd).getByTitle('Editar'));
+        const dataNascimento = screen.getByLabelText('Data de Nascimento (opcional)') as HTMLInputElement;
+        await user.clear(dataNascimento);
+        await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+        await waitFor(() => expect(rebanhoService.atualizarAnimal).toHaveBeenCalledWith(
+            ativo.id,
+            expect.objectContaining({ dataNascimento: null }),
+        ));
+    });
 });

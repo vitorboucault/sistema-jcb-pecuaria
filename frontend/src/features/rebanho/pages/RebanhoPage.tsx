@@ -420,7 +420,7 @@ export const RebanhoPage = () => {
                                 </div>
                                 <div>
                                     <label htmlFor="data-nascimento-edicao" className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
-                                        Data de Nascimento
+                                        Data de Nascimento (opcional)
                                     </label>
                                     <input
                                         id="data-nascimento-edicao"

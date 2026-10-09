@@ -389,7 +389,7 @@ export const AnimalModalForm = ({
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="data-nascimento" className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
-                                {isNascimento ? 'Data de nascimento *' : 'Data de nascimento'}
+                                {isNascimento ? 'Data de nascimento *' : 'Data de nascimento (opcional)'}
                             </label>
                             <input
                                 id="data-nascimento"
