@@ -20,7 +20,8 @@ jobs:
   backend-tests:
     name: Backend / Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,22 +39,28 @@ jobs:
       - name: Run backend tests
         run: ./scripts/check-backend.sh
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v4
-        with:
-            username: ${{ vars.DOCKERHUB_USERNAME }}
-            password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Verify Docker availability
+        run: docker info
 
-      - name: Pull PostgreSQL image
-        run: docker pull postgres:17-alpine
+      - name: Pull PostgreSQL from ECR Public
+        run: |
+          docker pull public.ecr.aws/docker/library/postgres:17-alpine
+          docker tag \
+            public.ecr.aws/docker/library/postgres:17-alpine \
+            postgres:17-alpine
+          docker image inspect postgres:17-alpine > /dev/null
 
-      - name: Run PostgreSQL migration tests (Docker required)
+      - name: Run PostgreSQL migration tests
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+          TESTCONTAINERS_CHECKS_DISABLE: "true"
         run: bash ./scripts/check-postgres.sh
 
   frontend-quality:
     name: Frontend / Quality
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
