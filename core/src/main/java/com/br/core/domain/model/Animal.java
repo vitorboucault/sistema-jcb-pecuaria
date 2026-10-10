@@ -1,6 +1,7 @@
 package com.br.core.domain.model;
 
 import com.br.core.domain.enums.Categoria;
+import com.br.core.domain.enums.OrigemAnimal;
 import com.br.core.domain.enums.Sexo;
 import com.br.core.domain.enums.Status;
 
@@ -19,8 +20,17 @@ public class Animal {
     private UUID maeId;
     private UUID loteId;
     private LocalDate dataMorte;
+    private final OrigemAnimal origem;
 
     public Animal(String brincoRgd, LocalDate dataNascimento, Sexo sexo, UUID maeId, UUID loteInicial) {
+        this(brincoRgd, dataNascimento, sexo, maeId, loteInicial, OrigemAnimal.DESCONHECIDO);
+    }
+
+    public Animal(String brincoRgd, LocalDate dataNascimento, Sexo sexo, UUID maeId, UUID loteInicial,
+                  OrigemAnimal origem) {
+        if (dataNascimento == null) {
+            throw new IllegalArgumentException("A data de nascimento é obrigatória.");
+        }
         if (dataNascimento.isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("O bezerro nao pode nascer no futuro.");
         }
@@ -32,13 +42,19 @@ public class Animal {
         this.status = Status.ATIVO;
         this.categoriaAtual = (sexo == Sexo.MACHO) ? Categoria.BEZERRO : Categoria.BEZERRA;
         this.loteId = loteInicial;
+        this.origem = normalizarOrigem(origem);
     }
 
     public Animal(UUID id, String brincoRgd, LocalDate dataNascimento, Sexo sexo, Categoria categoria, Status status, UUID maeId, UUID loteId) {
-        this(id, brincoRgd, dataNascimento, sexo, categoria, status, maeId, loteId, null);
+        this(id, brincoRgd, dataNascimento, sexo, categoria, status, maeId, loteId, null, OrigemAnimal.DESCONHECIDO);
     }
 
     public Animal(UUID id, String brincoRgd, LocalDate dataNascimento, Sexo sexo, Categoria categoria, Status status, UUID maeId, UUID loteId, LocalDate dataMorte) {
+        this(id, brincoRgd, dataNascimento, sexo, categoria, status, maeId, loteId, dataMorte, OrigemAnimal.DESCONHECIDO);
+    }
+
+    public Animal(UUID id, String brincoRgd, LocalDate dataNascimento, Sexo sexo, Categoria categoria, Status status,
+                  UUID maeId, UUID loteId, LocalDate dataMorte, OrigemAnimal origem) {
         this.id = id;
         this.brincoRgd = brincoRgd;
         this.dataNascimento = dataNascimento;
@@ -48,9 +64,13 @@ public class Animal {
         this.maeId = maeId;
         this.loteId = loteId;
         this.dataMorte = dataMorte;
+        this.origem = normalizarOrigem(origem);
     }
 
     public void registrarDesmame() {
+        if (this.dataNascimento == null) {
+            throw new IllegalStateException("A data de nascimento é necessária para validar a idade do animal.");
+        }
         long mesesIdade = ChronoUnit.MONTHS.between(this.dataNascimento, LocalDate.now());
         if (mesesIdade < 8) {
             throw new IllegalStateException("Animal muito jovem para desmame precoce (Minimo 8 meses).");
@@ -83,7 +103,7 @@ public class Animal {
     }
 
     public boolean avaliarEvolucaoPorIdade() {
-        if (this.status != Status.ATIVO) {
+        if (this.status != Status.ATIVO || this.dataNascimento == null) {
             return false;
         }
         long mesesIdade = ChronoUnit.MONTHS.between(this.dataNascimento, LocalDate.now());
@@ -127,10 +147,7 @@ public class Animal {
         if (brincoRgd == null || brincoRgd.isBlank()) {
             throw new IllegalArgumentException("O brinco/RGD é obrigatório.");
         }
-        if (dataNascimento == null) {
-            throw new IllegalArgumentException("A data de nascimento é obrigatória.");
-        }
-        if (dataNascimento.isAfter(LocalDate.now())) {
+        if (dataNascimento != null && dataNascimento.isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("O bezerro nao pode nascer no futuro.");
         }
         if (sexo == null) {
@@ -155,6 +172,7 @@ public class Animal {
     public UUID getMaeId() { return maeId; }
     public UUID getLoteId() { return loteId; }
     public LocalDate getDataMorte() { return dataMorte; }
+    public OrigemAnimal getOrigem() { return origem; }
 
     public void setCategoriaAtual(Categoria categoriaAtual) {
         this.categoriaAtual = categoriaAtual;
@@ -162,5 +180,9 @@ public class Animal {
 
     public void setMaeId(UUID maeId) {
         this.maeId = maeId;
+    }
+
+    private static OrigemAnimal normalizarOrigem(OrigemAnimal origem) {
+        return origem == null ? OrigemAnimal.DESCONHECIDO : origem;
     }
 }

@@ -1,16 +1,47 @@
 package com.br.core.domain.model;
 
 import com.br.core.domain.enums.Categoria;
+import com.br.core.domain.enums.OrigemAnimal;
 import com.br.core.domain.enums.Sexo;
 import com.br.core.domain.enums.Status;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class AnimalTest {
+    @Test
+    @DisplayName("@spec:AC-316 OrigemAnimal possui somente os valores permitidos")
+    void origemAnimalPossuiConjuntoFechadoDeValores() {
+        assertThat(OrigemAnimal.values())
+                .containsExactly(OrigemAnimal.COMPRA, OrigemAnimal.NASCIMENTO, OrigemAnimal.DESCONHECIDO);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-317 Cadastro legado não transforma operação em origem")
+    void construtorLegadoUsaOrigemDesconhecida() {
+        Animal animal = animalComStatus(Status.ATIVO, null, null);
+
+        assertThat(animal.getOrigem()).isEqualTo(OrigemAnimal.DESCONHECIDO);
+        assertThat(Arrays.stream(OrigemAnimal.values()).map(Enum::name).toList())
+                .doesNotContain("CADASTRO_INICIAL");
+    }
+
+    @Test
+    @DisplayName("@spec:AC-318 Origem nula permanece desconhecida sem valor fictício")
+    void origemNulaEConvertidaParaDesconhecida() {
+        Animal animal = new Animal(
+                UUID.randomUUID(), "SEM-ORIGEM", LocalDate.now().minusYears(1), Sexo.MACHO,
+                Categoria.BEZERRO, Status.ATIVO, null, null, null, null
+        );
+
+        assertThat(animal.getOrigem()).isEqualTo(OrigemAnimal.DESCONHECIDO);
+        assertThat(animal.getDataMorte()).isNull();
+    }
+
     @Test
     @DisplayName("Deve desmamar um bezerro macho para garrote com mais de 5 meses")
     void deveDesmamarBezerroMacho() {
@@ -29,6 +60,25 @@ public class AnimalTest {
         assertThatThrownBy(bezerro::registrarDesmame)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Animal muito jovem para desmame precoce (Minimo 8 meses).");
+    }
+
+    @Test
+    @DisplayName("@spec:AC-367 Animal sem nascimento conhecido não evolui por idade")
+    void animalSemNascimentoConhecidoNaoEvoluiPorIdade() {
+        Animal animal = animalComNascimentoDesconhecido(Categoria.BEZERRO);
+
+        assertThat(animal.avaliarEvolucaoPorIdade()).isFalse();
+        assertThat(animal.getCategoriaAtual()).isEqualTo(Categoria.BEZERRO);
+    }
+
+    @Test
+    @DisplayName("@spec:AC-368 Desmame sem nascimento conhecido retorna erro de negócio explícito")
+    void desmameSemNascimentoConhecidoEhRejeitado() {
+        Animal animal = animalComNascimentoDesconhecido(Categoria.BEZERRO);
+
+        assertThatThrownBy(animal::registrarDesmame)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("A data de nascimento é necessária para validar a idade do animal.");
     }
 
     @Test
@@ -143,6 +193,22 @@ public class AnimalTest {
                 "NOVO", LocalDate.now().plusDays(1), Sexo.MACHO, Categoria.BEZERRO))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("nao pode nascer no futuro");
+    }
+
+    @Test
+    @DisplayName("@spec:AC-371 Atualização cadastral pode manter nascimento desconhecido")
+    void atualizacaoCadastralPodeManterNascimentoDesconhecido() {
+        Animal animal = animalComNascimentoDesconhecido(Categoria.VACA);
+
+        animal.atualizarDadosCadastrais("CORRIGIDO", null, Sexo.FEMEA, Categoria.VACA);
+
+        assertThat(animal.getDataNascimento()).isNull();
+        assertThat(animal.getBrincoRgd()).isEqualTo("CORRIGIDO");
+    }
+
+    private Animal animalComNascimentoDesconhecido(Categoria categoria) {
+        return new Animal(UUID.randomUUID(), "SEM-NASCIMENTO-" + UUID.randomUUID(), null,
+                Sexo.FEMEA, categoria, Status.ATIVO, null, null, null, OrigemAnimal.DESCONHECIDO);
     }
 
     private Animal animalComStatus(Status status, UUID loteId, LocalDate dataMorte) {

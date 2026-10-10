@@ -1,7 +1,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import { isAxiosError } from 'axios';
 import { rebanhoService } from '../api/rebanhoService';
-import type { Animal, AtualizarAnimalInput, CadastrarAnimalInput, CategoriaAnimal, Lote, ResumoRebanho, StatusAnimal } from '../types';
+import type {
+    Animal,
+    AtualizarAnimalInput,
+    CadastroAnimalFormInput,
+    CategoriaAnimal,
+    Lote,
+    ResumoRebanho,
+    StatusAnimal,
+} from '../types';
 import { AnimalModalForm } from '../components/AnimalModalForm';
 import { Users, Plus, Tag, AlertCircle, Activity, Pencil, Skull, Trash2, RotateCcw, X, Save } from 'lucide-react';
 
@@ -95,8 +103,12 @@ export const RebanhoPage = () => {
         return () => window.clearTimeout(timeout);
     }, [carregarMatrizes]);
 
-    const handleCadastrarAnimal = async (dados: CadastrarAnimalInput) => {
-        await rebanhoService.cadastrarAnimal(dados);
+    const handleCadastrarAnimal = async (cadastro: CadastroAnimalFormInput) => {
+        if (cadastro.fluxo === 'EXISTENTE') {
+            await rebanhoService.cadastrarAnimalInicial(cadastro.dados);
+        } else {
+            await rebanhoService.cadastrarNascimento(cadastro.dados);
+        }
         await recarregarDados();
     };
 
@@ -104,7 +116,7 @@ export const RebanhoPage = () => {
         setAnimalEmEdicao(animal);
         setFormEdicao({
             brincoRgd: animal.brincoRgd,
-            dataNascimento: animal.dataNascimento,
+            dataNascimento: animal.dataNascimento ?? null,
             sexo: animal.sexo,
             categoria: animal.categoria,
         });
@@ -114,7 +126,10 @@ export const RebanhoPage = () => {
         if (!animalEmEdicao) return;
 
         try {
-            await rebanhoService.atualizarAnimal(animalEmEdicao.id, formEdicao);
+            await rebanhoService.atualizarAnimal(animalEmEdicao.id, {
+                ...formEdicao,
+                dataNascimento: formEdicao.dataNascimento || null,
+            });
             setAnimalEmEdicao(null);
             await recarregarDados();
         } catch (err: unknown) {
@@ -404,12 +419,13 @@ export const RebanhoPage = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
-                                        Data de Nascimento *
+                                    <label htmlFor="data-nascimento-edicao" className="block text-xs font-bold uppercase tracking-wider text-stone-300 mb-1">
+                                        Data de Nascimento (opcional)
                                     </label>
                                     <input
+                                        id="data-nascimento-edicao"
                                         type="date"
-                                        value={formEdicao.dataNascimento}
+                                        value={formEdicao.dataNascimento ?? ''}
                                         onChange={(e) => setFormEdicao((atual) => ({ ...atual, dataNascimento: e.target.value }))}
                                         className="w-full px-3.5 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 font-mono"
                                     />

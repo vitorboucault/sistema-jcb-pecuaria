@@ -86,7 +86,7 @@ describe('contrato do Rebanho', () => {
         assert.match(pageSource, /rebanhoService\.listarMatrizes\(\)/);
     });
 
-    it('@spec:AC-314 recarrega o rebanho uma única vez após cadastrar', () => {
+    it('@spec:AC-314 @spec:AC-348 recarrega o rebanho uma única vez após qualquer cadastro', () => {
         assert.doesNotMatch(pageSource, /onSuccess=\{recarregarDados\}/);
 
         const inicio = pageSource.indexOf('const handleCadastrarAnimal');
@@ -95,8 +95,28 @@ describe('contrato do Rebanho', () => {
         assert.notEqual(fim, -1, 'fim de handleCadastrarAnimal ausente');
 
         const cadastroSource = pageSource.slice(inicio, fim);
-        assert.match(cadastroSource, /await rebanhoService\.cadastrarAnimal\(dados\);\s*await recarregarDados\(\);/s);
+        assert.match(cadastroSource, /rebanhoService\.cadastrarAnimalInicial\(cadastro\.dados\)/);
+        assert.match(cadastroSource, /rebanhoService\.cadastrarNascimento\(cadastro\.dados\)/);
+        assert.match(cadastroSource, /await recarregarDados\(\);/);
         assert.equal([...cadastroSource.matchAll(/recarregarDados\(\)/g)].length, 1);
+    });
+
+    it('@spec:AC-342 separa os contratos dos endpoints de cadastro histórico e nascimento', () => {
+        assert.match(serviceSource, /cadastrarAnimalInicial\(animal: CadastrarAnimalInicialInput\)/);
+        assert.match(serviceSource, /api\.post<string>\('v1\/animais\/cadastrar', animal\)/);
+        assert.match(serviceSource, /cadastrarNascimento\(animal: CadastrarNascimentoInput\)/);
+        assert.match(serviceSource, /api\.post<string>\('v1\/animais', animal\)/);
+    });
+
+    it('@spec:AC-340 @spec:AC-341 não expõe campos da compra operacional no modal', () => {
+        const modalSource = fs.readFileSync(new URL('../src/features/rebanho/components/AnimalModalForm.tsx', import.meta.url), 'utf8');
+        assert.match(modalSource, /Animal já existente/);
+        assert.match(modalSource, /Novo nascimento/);
+        assert.match(modalSource, /DESCONHECIDO/);
+        assert.match(modalSource, /<option value="">Sem lote<\/option>/);
+        assert.doesNotMatch(modalSource, /Compra \/ Aquisição/);
+        assert.doesNotMatch(modalSource, /Data da Compra/);
+        assert.doesNotMatch(modalSource, /Valor da Compra/);
     });
 
     it('@spec:AC-315 preserva matrizes em erro e limpa o aviso após sucesso', () => {

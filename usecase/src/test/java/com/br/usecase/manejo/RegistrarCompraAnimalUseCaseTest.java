@@ -2,6 +2,7 @@ package com.br.usecase.manejo;
 
 import com.br.core.domain.enums.Categoria;
 import com.br.core.domain.enums.CategoriaDespesa;
+import com.br.core.domain.enums.OrigemAnimal;
 import com.br.core.domain.enums.Sexo;
 import com.br.core.domain.enums.Status;
 import com.br.core.domain.enums.TipoDeCusto;
@@ -28,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,7 +45,7 @@ class RegistrarCompraAnimalUseCaseTest {
     private RegistrarCompraAnimalUseCase useCase;
 
     @Test
-    @DisplayName("Deve registrar animal comprado como ativo com categoria e lote informados")
+    @DisplayName("@spec:AC-319 Compra recebe origem COMPRA e mantém o efeito financeiro separado")
     void deveRegistrarAnimalCompradoComSucesso() {
         UUID loteId = UUID.randomUUID();
         RegistrarCompraAnimalCommand command = new RegistrarCompraAnimalCommand(
@@ -74,6 +76,7 @@ class RegistrarCompraAnimalUseCaseTest {
         assertThat(animalSalvo.getStatus()).isEqualTo(Status.ATIVO);
         assertThat(animalSalvo.getMaeId()).isNull();
         assertThat(animalSalvo.getLoteId()).isEqualTo(loteId);
+        assertThat(animalSalvo.getOrigem()).isEqualTo(OrigemAnimal.COMPRA);
     }
 
     @Test
@@ -126,6 +129,21 @@ class RegistrarCompraAnimalUseCaseTest {
                 .hasMessageContaining("Erro: Já existe um animal com o brinco");
 
         verify(animalRepository, never()).salvar(any());
+    }
+
+    @Test
+    @DisplayName("@spec:AC-365 Compra operacional rejeita data de nascimento nula")
+    void deveRejeitarCompraSemDataNascimento() {
+        RegistrarCompraAnimalCommand command = new RegistrarCompraAnimalCommand(
+                "COMPRA-SEM-NASCIMENTO", null, Sexo.FEMEA, Categoria.VACA,
+                null, null, null
+        );
+
+        assertThatThrownBy(() -> useCase.executar(command))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A data de nascimento é obrigatória.");
+
+        verifyNoInteractions(animalRepository, despesaRepository);
     }
 
     @Test

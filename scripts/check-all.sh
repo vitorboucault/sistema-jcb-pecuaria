@@ -10,6 +10,7 @@ echo "==========================================="
 "${SCRIPT_DIR}/check-backend.sh"
 echo ""
 "${SCRIPT_DIR}/check-frontend.sh"
+bash "${SCRIPT_DIR}/check-postgres.sh"
 
 echo ""
 echo "==========================================="

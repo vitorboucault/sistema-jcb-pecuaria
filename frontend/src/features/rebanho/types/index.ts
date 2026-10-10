@@ -9,6 +9,10 @@ export type CategoriaAnimal =
 
 export type StatusAnimal = 'ATIVO' | 'VENDIDO' | 'MORTO';
 
+export type OrigemAnimal = 'COMPRA' | 'NASCIMENTO' | 'DESCONHECIDO';
+
+export type FluxoCadastroAnimal = 'EXISTENTE' | 'NASCIMENTO';
+
 export interface Animal {
     id: string;
     brincoRgd: string;
@@ -18,7 +22,7 @@ export interface Animal {
     nomeLote?: string;
     pesoAtual: number | null;
     status: StatusAnimal;
-    dataNascimento: string;
+    dataNascimento: string | null;
     dataMorte?: string | null;
 }
 
@@ -43,23 +47,40 @@ export interface ResumoRebanho {
     porCategoria: Record<CategoriaAnimal, number>;
 }
 
-export interface CadastrarAnimalInput {
-    origem: 'COMPRA' | 'NASCIMENTO';
+export interface CadastrarAnimalInicialInput {
+    origem: OrigemAnimal;
+    brincoRgd: string;
+    categoria: CategoriaAnimal;
+    sexo: 'MACHO' | 'FEMEA';
+    dataNascimento: string | null;
+    loteId?: string;
+    pesoAtual?: number;
+    dataPesagem?: string;
+    dataCompraHistorica?: string;
+    valorCompraHistorico?: number;
+}
+
+export interface CadastrarNascimentoInput {
+    origem: 'NASCIMENTO';
     brincoRgd: string;
     categoria: CategoriaAnimal;
     sexo: 'MACHO' | 'FEMEA';
     peso: number;
     dataNascimento: string;
     dataEntrada: string;
-    dataCompra?: string;
-    valorCompra?: number;
     maeId?: string;
-    loteId: string;
+    loteId?: string;
 }
+
+export type CadastroAnimalFormInput =
+    | { fluxo: 'EXISTENTE'; dados: CadastrarAnimalInicialInput }
+    | { fluxo: 'NASCIMENTO'; dados: CadastrarNascimentoInput };
+
+export type CadastrarAnimalInput = CadastrarNascimentoInput;
 
 export interface AtualizarAnimalInput {
     brincoRgd: string;
-    dataNascimento: string;
+    dataNascimento: string | null;
     sexo: 'MACHO' | 'FEMEA';
     categoria: CategoriaAnimal;
 }

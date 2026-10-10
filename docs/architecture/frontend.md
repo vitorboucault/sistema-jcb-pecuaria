@@ -57,6 +57,16 @@ frontend/src/
 
 ## 4. Comandos de Validação e Execução
 
+`npm test` executa os testes existentes com `node:test`, verifica os tipos dos
+testes e executa Vitest com Testing Library/jsdom. Os testes de componentes
+renderizam a tela real com o serviço controlado; os testes do serviço exercitam
+a paginação de matrizes com transporte HTTP simulado. Isso complementa, sem
+remover, as verificações textuais legadas.
+
+A cobertura contempla os filtros atuais, ações por status, matrizes elegíveis,
+recarga após mutação e recuperação de falhas. Não comprova os fluxos futuros
+de cadastro inicial no formulário, pesagem em duas chamadas ou paginação visual.
+
 - **Validação Automatizada (CI / Lockfile + Linter + Build)**:
   ```bash
   ./scripts/check-frontend.sh

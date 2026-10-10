@@ -1,6 +1,7 @@
 package com.br.usecase.manejo;
 
 import com.br.core.domain.enums.Categoria;
+import com.br.core.domain.enums.OrigemAnimal;
 import com.br.core.domain.enums.Sexo;
 import com.br.core.domain.enums.Status;
 import com.br.core.domain.model.Animal;
@@ -32,7 +33,7 @@ class RegistrarNascimentoUseCaseTest {
     private RegistrarNascimentoUseCase useCase;
 
     @Test
-    @DisplayName("@spec:AC-310 Deve registrar nascimento de bezerro macho e alocar no lote atual da mãe")
+    @DisplayName("@spec:AC-310 @spec:AC-319 Nascimento com matriz elegível recebe origem NASCIMENTO")
     void deveRegistrarNascimentoComSucesso() {
         UUID maeId = UUID.randomUUID();
         UUID loteMae = UUID.randomUUID();
@@ -57,6 +58,7 @@ class RegistrarNascimentoUseCaseTest {
         assertThat(bezerroSalvo.getCategoriaAtual()).isEqualTo(Categoria.BEZERRO);
         assertThat(bezerroSalvo.getLoteId()).isEqualTo(loteMae);
         assertThat(bezerroSalvo.getMaeId()).isEqualTo(maeId);
+        assertThat(bezerroSalvo.getOrigem()).isEqualTo(OrigemAnimal.NASCIMENTO);
     }
 
     @Test
@@ -74,6 +76,20 @@ class RegistrarNascimentoUseCaseTest {
                 .hasMessageContaining("Erro: Já existe um animal com o brinco");
 
         verify(animalRepository, never()).salvar(any());
+    }
+
+    @Test
+    @DisplayName("@spec:AC-365 Novo nascimento rejeita data de nascimento nula")
+    void deveRejeitarNascimentoSemData() {
+        RegistrarNascimentoCommand command = new RegistrarNascimentoCommand(
+                "BEZ-SEM-DATA", null, Sexo.MACHO, null
+        );
+
+        assertThatThrownBy(() -> useCase.executar(command))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A data de nascimento é obrigatória.");
+
+        verifyNoInteractions(animalRepository);
     }
 
     @Test

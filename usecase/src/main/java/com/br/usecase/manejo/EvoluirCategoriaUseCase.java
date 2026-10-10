@@ -27,6 +27,4 @@ public class EvoluirCategoriaUseCase {
         }
         System.out.println("Job Executado: " + atualizados + " animais evoluíram de categoria nesta madrugada.");
     }
-
-
 }

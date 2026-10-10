@@ -40,5 +40,10 @@ frontend/.vite/
 
 ### Agentes e Skills ###
 .agents/skills/onp-spec-driven/
-/onpspec.config.json
-/.spec
+/.spec/*
+!/.spec/constituicao.md
+!/.spec/features/
+/.spec/features/*/*
+!/.spec/features/*/spec.md
+!/.spec/features/*/tasks.md
+!/.spec/features/*/design.md
