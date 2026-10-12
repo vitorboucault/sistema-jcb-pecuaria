@@ -17,7 +17,6 @@ import java.util.Optional;
 public class RegistrarPesagemUseCase {
     private final AnimalRepository animalRepository;
     private final PesagemRepository pesagemRepository;
-
     private final CalculadoraGmdService calculadora = new CalculadoraGmdService();
 
     public RegistrarPesagemUseCase(AnimalRepository animalRepository, PesagemRepository pesagemRepository) {
