@@ -1,6 +1,8 @@
 package com.br.core.domain.enums;
 
-public enum CategoriaDespesa {
+import com.br.core.domain.enums.interfaces.CategoriaFinanceira;
+
+public enum CategoriaDespesa implements CategoriaFinanceira {
     NUTRICAO,       // Sal mineral, raçao, suplemento
     SANIDADE,       // Vacinas, vermífugos, medicamentos
     PASTAGEM,       // Sementes, adubo, calcário, herbicida
@@ -8,5 +10,10 @@ public enum CategoriaDespesa {
     MANUTENCAO,     // Trator, cercas, bebedouros
     IMPOSTOS,       // Funrural, GTA, ITR
     COMPRA_ANIMAL,
-    DIVERSOS
+    DIVERSOS,
+    ENERGIA,
+    INTERNET,
+    AGUA,
+    COMBUSTIVEL,
+    SERVICOS
 }
