@@ -9,6 +9,7 @@ import com.br.infra.persistence.repository.SpringDataDespesaRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -28,19 +29,28 @@ public class DespesaRepositoryImpl implements DespesaRepository {
     }
 
     @Override
+    @Transactional
     public void salvar(Despesa despesa) {
-        DespesaEntity entity = mapper.toEntity(despesa);
+        DespesaEntity entity = springDataRepository.findById(despesa.getId()).map(existente -> {
+            if (!"DESPESA".equals(existente.getTipo())) {
+                throw new IllegalArgumentException("Receita não pode ser salva pela visão Despesa.");
+            }
+            existente.atualizarDadosDespesa(despesa.getDataOcorrencia(), despesa.getValor(),
+                    despesa.getCategoria().name(), despesa.getReferenciaId(), despesa.getTipoCentroCusto().name());
+            return existente;
+        }).orElseGet(() -> mapper.toEntity(despesa));
         springDataRepository.save(entity);
     }
 
     @Override
     public void excluirPorId(UUID id) {
-        springDataRepository.deleteById(id);
+        springDataRepository.findById(id).filter(entity -> "DESPESA".equals(entity.getTipo()))
+                .ifPresent(springDataRepository::delete);
     }
 
     @Override
     public List<Despesa> buscarPorLote(UUID loteId) {
-        return springDataRepository.findByTipoAndCentroCustoId("DESPESA", loteId).stream()
+        return springDataRepository.findByTipoAndCentroCustoIdAndTipoCentroCusto("DESPESA", loteId, "LOTE").stream()
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
     }
@@ -66,7 +76,7 @@ public class DespesaRepositoryImpl implements DespesaRepository {
     @Override
     public Pagina<Despesa> buscarTodosPaginado(int pagina, int tamanho) {
         PageRequest pageRequest = PageRequest.of(pagina, tamanho);
-        Page<DespesaEntity> pageResult = springDataRepository.findAll(pageRequest); // Nativo do JpaRepository
+        Page<DespesaEntity> pageResult = springDataRepository.findByTipo("DESPESA", pageRequest);
 
         List<Despesa> despesas = pageResult.getContent().stream()
                 .map(mapper::toDomain)
@@ -79,5 +89,4 @@ public class DespesaRepositoryImpl implements DespesaRepository {
     public boolean existePorAnimalId(UUID animalId) {
         return springDataRepository.existsByTipoAndCentroCustoIdAndTipoCentroCusto("DESPESA", animalId, "ANIMAL");
     }
-
 }

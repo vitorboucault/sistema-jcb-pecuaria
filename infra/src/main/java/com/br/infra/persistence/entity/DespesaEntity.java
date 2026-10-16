@@ -22,15 +22,28 @@ public class DespesaEntity {
     @Column(name = "data_transacao", nullable = false)
     private LocalDate dataTransacao;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal valor;
 
     @Column(nullable = false, length = 50)
     private String categoria;
     @Column(name = "centro_custo_id")
     private UUID centroCustoId;
-    @Column(name = "tipo_centro_custo", length = 50)
+    @Column(name = "tipo_centro_custo", nullable = false, length = 50)
     private String tipoCentroCusto;
+
+    @Column(nullable = false, columnDefinition = "text")
+    private String descricao;
+    @Column(nullable = false, length = 20)
+    private String situacao;
+    @Column(name = "data_vencimento")
+    private LocalDate dataVencimento;
+    @Column(name = "data_efetivacao")
+    private LocalDate dataEfetivacao;
+    @Column(name = "origem_tipo", length = 30)
+    private String origemTipo;
+    @Column(name = "origem_id")
+    private UUID origemId;
 
     protected DespesaEntity() {}
 
@@ -51,4 +64,32 @@ public class DespesaEntity {
     public String getCategoria() { return categoria; }
     public UUID getCentroCustoId() { return centroCustoId; }
     public String getTipoCentroCusto() { return tipoCentroCusto; }
+    public String getDescricao() { return descricao; }
+    public String getSituacao() { return situacao; }
+    public LocalDate getDataVencimento() { return dataVencimento; }
+    public LocalDate getDataEfetivacao() { return dataEfetivacao; }
+    public String getOrigemTipo() { return origemTipo; }
+    public UUID getOrigemId() { return origemId; }
+
+    public void definirDadosFinanceiros(String descricao, String situacao, LocalDate dataVencimento,
+                                        LocalDate dataEfetivacao) {
+        this.descricao = descricao;
+        this.situacao = situacao;
+        this.dataVencimento = dataVencimento;
+        this.dataEfetivacao = dataEfetivacao;
+    }
+
+    public void definirOrigem(String origemTipo, UUID origemId) {
+        this.origemTipo = origemTipo;
+        this.origemId = origemId;
+    }
+
+    public void atualizarDadosDespesa(LocalDate data, BigDecimal valor, String categoria,
+                                     UUID centroCustoId, String tipoCentroCusto) {
+        this.dataTransacao = data;
+        this.valor = valor;
+        this.categoria = categoria;
+        this.centroCustoId = centroCustoId;
+        this.tipoCentroCusto = tipoCentroCusto;
+    }
 }

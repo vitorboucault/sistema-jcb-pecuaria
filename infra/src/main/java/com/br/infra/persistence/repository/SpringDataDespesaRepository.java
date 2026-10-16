@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 
 import java.math.BigDecimal;
@@ -14,12 +16,11 @@ import java.util.UUID;
 
 @Repository
 public interface SpringDataDespesaRepository extends JpaRepository<DespesaEntity, UUID> {
-    List<DespesaEntity> findByTipoAndCentroCustoId(String tipo, UUID centroCustoId);
+    Page<DespesaEntity> findByTipo(String tipo, Pageable pageable);
     List<DespesaEntity> findByTipoAndCentroCustoIdAndTipoCentroCusto(String tipo, UUID centroCustoId, String tipoCentroCusto);
     List<DespesaEntity> findByTipoAndDataTransacaoBetween(String tipo, LocalDate inicio, LocalDate fim);
     boolean existsByTipoAndCentroCustoIdAndTipoCentroCusto(String tipo, UUID centroCustoId, String tipoCentroCusto);
 
-    @Query("SELECT COALESCE(SUM(d.valor), 0.0) FROM DespesaEntity d WHERE d.dataTransacao BETWEEN :inicio AND :fim")
+    @Query("SELECT COALESCE(SUM(d.valor), 0.0) FROM DespesaEntity d WHERE d.tipo = 'DESPESA' AND d.dataTransacao BETWEEN :inicio AND :fim")
     BigDecimal somarDespesasNoPeriodo(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
-
 }
