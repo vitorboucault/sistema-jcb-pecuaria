@@ -10,4 +10,4 @@ if ! docker info >/dev/null 2>&1; then
     exit 1
 fi
 ./mvnw --batch-mode --no-transfer-progress -pl infra -am \
-    -Dtest=RebanhoPostgresIT,FinanceiroPostgresIT -Dsurefire.failIfNoSpecifiedTests=false test
+    -Dtest=RebanhoPostgresIT,FinanceiroPostgresIT,FinanceiroHttpPostgresIT -Dsurefire.failIfNoSpecifiedTests=false test

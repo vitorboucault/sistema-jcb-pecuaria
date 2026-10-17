@@ -2,7 +2,7 @@
 
 ## Situação atual e proposta
 
-O domínio e a persistência de receitas e despesas estão implementados em FIN-002.1–FIN-002.2. Compras operacionais com valor geram despesas PENDENTE; indicadores produtivos continuam consultando despesas por ocorrência. Cadastro via API, confirmação de pagamentos/recebimentos, recorrências e resumo de caixa permanecem nas etapas seguintes de FIN-002–FIN-006.
+O domínio e a persistência de receitas e despesas estão implementados em FIN-002.1–FIN-002.2. Compras operacionais com valor geram despesas PENDENTE; indicadores produtivos continuam consultando despesas por ocorrência. FIN-002.3 acrescenta cadastro e consulta por UUID via API autenticada, com validação de centros existentes. Confirmação posterior de pagamentos/recebimentos, recorrências e resumo de caixa permanecem nas etapas seguintes de FIN-002–FIN-006.
 
 A [especificação](../../.spec/features/financeiro-essencial/spec.md) concentra critérios verificáveis, DER, contratos e estratégia de evolução. As [tarefas](../../.spec/features/financeiro-essencial/tasks.md) definem as entregas seguintes.
 
@@ -39,3 +39,9 @@ Venda de animais é operação pecuária independente. Hoje ela é individual e 
 ## Fora do MVP
 
 Vendas múltiplas e integração automática pertencem à sprint Vendas. Também ficam fora: parcelas, pagamentos parciais, contas e conciliação bancária, rateios complexos, contabilidade formal, custos individuais avançados, relatórios complexos de rentabilidade, Excel e comprovantes.
+
+## API disponível na FIN-002.3
+
+POST `/api/v1/financeiro/lancamentos` cadastra receita/despesa e retorna 201 com Location, UUID gerado e dados normalizados. GET `/api/v1/financeiro/lancamentos/{id}` retorna 200 ou 404; payload/UUID inválido retorna 400. Ambos exigem JWT válido. O cliente informa os atributos básicos do domínio, sem definir UUID ou origem operacional. O cadastro aceita PENDENTE ou EFETIVADO com data efetiva válida; centros ANIMAL, LOTE e PASTO precisam existir e GERAL não recebe referência.
+
+O cadastro ainda não é idempotente: cada POST válido cria um lançamento. `chaveOperacao` e proteção contra reenvios são requisitos da FIN-002.5. A descrição de proteção contra duplicidade acima representa o contrato final, ainda planejado. Nesta etapa não há edição, exclusão, confirmação posterior, listagem, resumo ou recorrência.

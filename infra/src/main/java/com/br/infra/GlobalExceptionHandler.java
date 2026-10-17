@@ -1,5 +1,6 @@
 package com.br.infra;
 
+import com.br.usecase.exception.LancamentoFinanceiroNaoEncontradoException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,12 @@ public class GlobalExceptionHandler {
 
     private static final Logger log =
             LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(LancamentoFinanceiroNaoEncontradoException.class)
+    public ResponseEntity<ApiErrorResponse> tratarLancamentoNaoEncontrado(LancamentoFinanceiroNaoEncontradoException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiErrorResponse.simples(
+                HttpStatus.NOT_FOUND.value(), "Recurso não encontrado", ex.getMessage()));
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> tratarValidacao(

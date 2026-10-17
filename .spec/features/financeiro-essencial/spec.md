@@ -5,7 +5,7 @@
 
 ## Objetivo e escopo
 
-Permitir ao produtor cadastrar contas fixas uma vez, registrar despesas avulsas e receitas, confirmar operações integrais e consultar resultados mensais e anuais. FIN-001 definiu os contratos; FIN-002.1 e FIN-002.2 implementam domínio e persistência. Casos de uso, API, recorrência e demais entregas permanecem planejados. O status SDD permanece rascunho porque os critérios funcionais integrais ainda não têm implementação e prova completa.
+Permitir ao produtor cadastrar contas fixas uma vez, registrar despesas avulsas e receitas, confirmar operações integrais e consultar resultados mensais e anuais. FIN-001 definiu os contratos; FIN-002.1 e FIN-002.2 implementam domínio e persistência; FIN-002.3 implementa cadastro/consulta por UUID e validação de centros. Confirmação posterior, correção/exclusão, recorrência e demais entregas permanecem planejadas. O status SDD permanece rascunho porque os critérios funcionais integrais ainda não têm implementação e prova completa.
 
 O MVP abrange lançamentos manuais, recorrências mensais de despesas, duas situações operacionais, vencimentos opcionais, histórico e correções. Não cria exercícios separados nem um saldo bancário.
 
@@ -192,6 +192,22 @@ Restrições futuras: valor positivo e precisão 12,2; tipo/categoria compatíve
 
 Core concentra invariantes e enums, usecase coordena transações e portas, infra implementa persistência/mappers, application valida payload e delega. Manter `DespesaRepository` como porta compatível e introduzir apenas a porta de lançamentos e a de recorrências necessárias. Evitar entidade JPA duplicada divergente para a mesma tabela; evoluir o mapeamento existente e adaptar a visão Despesa.
 
+### Contrato incremental FIN-002.3
+
+Implementados somente POST `/api/v1/financeiro/lancamentos` (201, Location e dados do lançamento) e GET `/api/v1/financeiro/lancamentos/{id}` (200 ou 404). Ambos exigem JWT válido; UUID inválido/payload inválido retorna 400. Cadastro aceita PENDENTE ou EFETIVADO com data efetiva válida. Centros ANIMAL, LOTE e PASTO devem existir nos respectivos repositórios; GERAL não tem referência. Falha de validação não persiste lançamento.
+
+Entrada desta etapa: `{tipo, descricao, valor, categoria, dataReferencia, dataVencimento?, situacao, dataEfetivacao?, tipoDeCusto, referenciaId?}`. `categoria` é o nome de um enum de receita/despesa conforme `tipo`. UUID e origem operacional não fazem parte do DTO de entrada. Saída contém esses atributos e o UUID gerado; não acrescenta metadados ainda não implementados.
+
+**Idempotência não está implementada nesta etapa.** Não há `chaveOperacao` no DTO nem proteção contra reenvio: cada POST válido cria um novo UUID. `chaveOperacao`, detecção de duplicidade e o contrato de reenvio idempotente da tabela abaixo permanecem para **FIN-002.5**. Não há confirmação posterior, correção/exclusão, recorrência, listagem/filtros, resumo, auditoria ou integração de venda nesta etapa.
+
+Exemplo de cadastro disponível nesta etapa:
+
+```json
+{"tipo":"DESPESA","descricao":"Energia","valor":200.00,"categoria":"ENERGIA","dataReferencia":"2026-10-01","situacao":"PENDENTE","tipoDeCusto":"GERAL"}
+```
+
+### Contratos finais planejados
+
 Prefixo novo `/api/v1/financeiro`; JSON camelCase, UUID e datas ISO `YYYY-MM-DD`, valores decimais em reais. Segurança JWT e padrão global de erros existente são preservados, sem detalhes internos. Respostas de lista usam `Pagina<T>` com os campos existentes `conteudo`, `numeroPagina`, `tamanhoPagina`, `totalElementos` e `totalPaginas`.
 
 | Caso de uso | Contrato | Resultado |
@@ -243,7 +259,7 @@ Erros: 400 payload/invariantes/filtros inválidos, 404 recurso inexistente, 409 
 ## Inicialização do banco e integração com as operações
 
 1. O financeiro começa sem transações antigas, conforme confirmação explícita do usuário. Não implementar backfill, marcador ou classificação de legado financeiro.
-2. Novas migrations após V11 adicionam os campos financeiros à tabela existente, mantendo UUID e `data_transacao`. Descrição e situação são obrigatórias desde a inicialização; a V12 ainda não versionada reflete essa premissa.
+2. Novas migrations após V11 adicionam os campos financeiros à tabela existente, mantendo UUID e `data_transacao`. Descrição e situação são obrigatórias desde a inicialização; a V12 reflete essa premissa.
 3. A inicialização não cria lançamentos nem presume pagamentos; a data efetiva é informada somente quando a situação é EFETIVADO.
 4. Novos lançamentos exigem descrição e situação. Evoluir adaptador de Despesa mantendo assinaturas e sem sobrescrever situação/auditoria ao salvar pela visão Despesa. Compra operacional futura grava PENDENTE e origem COMPRA_ANIMAL/id do animal, pois o comando atual não comprova pagamento.
 5. Antes de habilitar receita, filtrar tipo DESPESA em soma/paginação e tipo LOTE em busca por lote; excluir logicamente sem incluir em indicadores. Consultar despesas por referência e não filtrar somente EFETIVADO: mudança de semântica dos indicadores é tarefa separada. Receitas manuais não entram novamente na margem calculada a partir de vendas.
