@@ -7,15 +7,22 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface SpringDataDespesaRepository extends JpaRepository<DespesaEntity, UUID> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT d FROM DespesaEntity d WHERE d.id = :id")
+    Optional<DespesaEntity> buscarPorIdParaAtualizacao(@Param("id") UUID id);
+
     Page<DespesaEntity> findByTipo(String tipo, Pageable pageable);
     List<DespesaEntity> findByTipoAndCentroCustoIdAndTipoCentroCusto(String tipo, UUID centroCustoId, String tipoCentroCusto);
     List<DespesaEntity> findByTipoAndDataTransacaoBetween(String tipo, LocalDate inicio, LocalDate fim);

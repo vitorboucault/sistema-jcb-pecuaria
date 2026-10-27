@@ -6,6 +6,7 @@ import com.br.infra.persistence.mapper.LancamentoFinanceiroMapper;
 import com.br.infra.persistence.repository.SpringDataDespesaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -33,6 +34,12 @@ public class LancamentoFinanceiroRepositoryImpl implements LancamentoFinanceiroR
     @Override
     public Optional<LancamentoFinanceiro> buscarPorId(UUID id) {
         return repository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public Optional<LancamentoFinanceiro> buscarPorIdParaAtualizacao(UUID id) {
+        return repository.buscarPorIdParaAtualizacao(id).map(mapper::toDomain);
     }
 
 }

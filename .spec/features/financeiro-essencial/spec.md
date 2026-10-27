@@ -5,7 +5,7 @@
 
 ## Objetivo e escopo
 
-Permitir ao produtor cadastrar contas fixas uma vez, registrar despesas avulsas e receitas, confirmar operações integrais e consultar resultados mensais e anuais. FIN-001 definiu os contratos; FIN-002.1 e FIN-002.2 implementam domínio e persistência; FIN-002.3 implementa cadastro/consulta por UUID e validação de centros. Confirmação posterior, correção/exclusão, recorrência e demais entregas permanecem planejadas. O status SDD permanece rascunho porque os critérios funcionais integrais ainda não têm implementação e prova completa.
+Permitir ao produtor cadastrar contas fixas uma vez, registrar despesas avulsas e receitas, confirmar operações integrais e consultar resultados mensais e anuais. FIN-001 definiu os contratos; FIN-002.1 e FIN-002.2 implementam domínio e persistência; FIN-002.3 implementa cadastro/consulta por UUID e validação de centros. FIN-002.4 acrescenta confirmação integral de pagamento/recebimento. Correção/exclusão, recorrência e demais entregas permanecem planejadas. O status SDD permanece rascunho porque os critérios funcionais integrais ainda não têm implementação e prova completa.
 
 O MVP abrange lançamentos manuais, recorrências mensais de despesas, duas situações operacionais, vencimentos opcionais, histórico e correções. Não cria exercícios separados nem um saldo bancário.
 
@@ -204,6 +204,18 @@ Exemplo de cadastro disponível nesta etapa:
 
 ```json
 {"tipo":"DESPESA","descricao":"Energia","valor":200.00,"categoria":"ENERGIA","dataReferencia":"2026-10-01","situacao":"PENDENTE","tipoDeCusto":"GERAL"}
+```
+
+### Contrato incremental FIN-002.4
+
+POST `/api/v1/financeiro/lancamentos/{id}/pagar` confirma uma DESPESA; POST `/api/v1/financeiro/lancamentos/{id}/receber` confirma uma RECEITA. Ambos exigem JWT e retornam 200 com o lançamento atualizado. Entrada aceita somente `{dataEfetivacao}` em ISO `YYYY-MM-DD`, obrigatória e não futura; campos adicionais (inclusive valor parcial ou versao) são rejeitados com 400.
+
+Uma confirmação nova transforma PENDENTE em EFETIVADO, preservando UUID, valor integral, categoria, descrição, referência, vencimento, centro e origem operacional. Repetição na mesma data retorna o registro atual sem nova gravação. Data diferente ou ação incompatível é 409; data/payload/UUID inválido é 400; inexistente é 404. A operação usa transação e bloqueio pessimista da linha até a conclusão, inclusive em repetições, para serializar confirmações concorrentes.
+
+**Diferença para o contrato final:** `versao` e controle otimista ficam para **FIN-002.5**; não há coluna de versão ou tabela/chave de idempotência nesta etapa. A idempotência por situação/data da confirmação é implementada na FIN-002.4, separada da idempotência de cadastro que permanece pendente. Não há pagamentos parciais, correções, exclusões, auditoria, recorrências, relatórios, frontend ou integração com vendas.
+
+```json
+{"dataEfetivacao":"2026-10-16"}
 ```
 
 ### Contratos finais planejados

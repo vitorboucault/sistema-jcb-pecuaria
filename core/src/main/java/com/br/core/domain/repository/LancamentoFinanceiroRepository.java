@@ -9,4 +9,7 @@ public interface LancamentoFinanceiroRepository {
     void salvar(LancamentoFinanceiro lancamento);
 
     Optional<LancamentoFinanceiro> buscarPorId(UUID id);
+
+    /** Requer transação ativa; mantém bloqueio exclusivo até o fim da transação. */
+    Optional<LancamentoFinanceiro> buscarPorIdParaAtualizacao(UUID id);
 }

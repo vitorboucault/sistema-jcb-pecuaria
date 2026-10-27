@@ -2,6 +2,9 @@ package com.br.application.rest;
 
 import com.br.application.dto.LancamentoFinanceiroResponse;
 import com.br.application.dto.RegistrarLancamentoFinanceiroRequest;
+import com.br.application.dto.ConfirmarLancamentoFinanceiroRequest;
+import com.br.usecase.financeiro.ConfirmarPagamentoUseCase;
+import com.br.usecase.financeiro.ConfirmarRecebimentoUseCase;
 import com.br.usecase.financeiro.ConsultarLancamentoFinanceiroUseCase;
 import com.br.usecase.financeiro.RegistrarLancamentoFinanceiroUseCase;
 import jakarta.validation.Valid;
@@ -21,11 +24,17 @@ import java.util.UUID;
 public class FinanceiroController {
     private final RegistrarLancamentoFinanceiroUseCase registrar;
     private final ConsultarLancamentoFinanceiroUseCase consultar;
+    private final ConfirmarPagamentoUseCase confirmarPagamento;
+    private final ConfirmarRecebimentoUseCase confirmarRecebimento;
 
     public FinanceiroController(RegistrarLancamentoFinanceiroUseCase registrar,
-                                ConsultarLancamentoFinanceiroUseCase consultar) {
+                                ConsultarLancamentoFinanceiroUseCase consultar,
+                                ConfirmarPagamentoUseCase confirmarPagamento,
+                                ConfirmarRecebimentoUseCase confirmarRecebimento) {
         this.registrar = registrar;
         this.consultar = consultar;
+        this.confirmarPagamento = confirmarPagamento;
+        this.confirmarRecebimento = confirmarRecebimento;
     }
 
     @PostMapping
@@ -37,5 +46,17 @@ public class FinanceiroController {
     @GetMapping("/{id}")
     public ResponseEntity<LancamentoFinanceiroResponse> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(LancamentoFinanceiroResponse.from(consultar.executar(id)));
+    }
+
+    @PostMapping("/{id}/pagar")
+    public ResponseEntity<LancamentoFinanceiroResponse> pagar(@PathVariable UUID id,
+            @Valid @RequestBody ConfirmarLancamentoFinanceiroRequest request) {
+        return ResponseEntity.ok(LancamentoFinanceiroResponse.from(confirmarPagamento.executar(id, request.dataEfetivacao())));
+    }
+
+    @PostMapping("/{id}/receber")
+    public ResponseEntity<LancamentoFinanceiroResponse> receber(@PathVariable UUID id,
+            @Valid @RequestBody ConfirmarLancamentoFinanceiroRequest request) {
+        return ResponseEntity.ok(LancamentoFinanceiroResponse.from(confirmarRecebimento.executar(id, request.dataEfetivacao())));
     }
 }

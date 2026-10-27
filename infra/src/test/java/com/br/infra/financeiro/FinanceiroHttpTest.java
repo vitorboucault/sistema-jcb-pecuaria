@@ -26,6 +26,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,10 +39,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class FinanceiroHttpTest {
     private static final String URL = "/api/v1/financeiro/lancamentos";
     private final WebApplicationContext context;
-    private final JdbcTemplate jdbc;
+    protected final JdbcTemplate jdbc;
     private final EntityManager entityManager;
-    private MockMvc mvc;
-    private String token;
+    protected MockMvc mvc;
+    protected String token;
 
     @Autowired
     public FinanceiroHttpTest(WebApplicationContext context, JdbcTemplate jdbc, EntityManager entityManager) {
@@ -54,6 +56,139 @@ public class FinanceiroHttpTest {
         mvc = MockMvcBuilders.webAppContextSetup(context)
                 .apply(SecurityMockMvcConfigurers.springSecurity()).build();
         token = token(Instant.now().plusSeconds(300));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"DESPESA,pagar", "RECEITA,receber"})
+    @DisplayName("@spec:AC-703 API confirma integralmente preservando todos os atributos e a origem operacional")
+    void confirmaIntegralmente(String tipo, String acao) throws Exception {
+        UUID id = inserirPendente(tipo);
+        var antes = snapshot(id);
+        mvc.perform(post(URL + "/{id}/" + acao, id).header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"dataEfetivacao\":\"2025-01-11\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(id.toString()))
+                .andExpect(jsonPath("$.situacao").value("EFETIVADO"))
+                .andExpect(jsonPath("$.dataEfetivacao").value("2025-01-11"))
+                .andExpect(jsonPath("$.valor").value(100.00));
+        entityManager.flush();
+        entityManager.clear();
+        mvc.perform(get(URL + "/{id}", id).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.situacao").value("EFETIVADO"))
+                .andExpect(jsonPath("$.dataEfetivacao").value("2025-01-11"));
+        var depois = snapshot(id);
+        assertThat(depois.get("situacao")).isEqualTo("EFETIVADO");
+        assertThat(depois.get("data_efetivacao")).isEqualTo(java.sql.Date.valueOf("2025-01-11"));
+        assertThat(semEfetivacao(depois)).isEqualTo(semEfetivacao(antes));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"DESPESA,pagar", "RECEITA,receber"})
+    @DisplayName("@spec:AC-704 Mesma data retorna 200; outra data retorna 409 sem alterar o lançamento efetivado")
+    void repeteConfirmacao(String tipo, String acao) throws Exception {
+        UUID id = inserirPendente(tipo);
+        String primeira = confirmar(id, acao, "{\"dataEfetivacao\":\"2025-01-11\"}", 200);
+        entityManager.flush();
+        var antes = snapshot(id);
+        String repetida = confirmar(id, acao, "{\"dataEfetivacao\":\"2025-01-11\"}", 200);
+        assertThat(repetida).isEqualTo(primeira);
+        confirmar(id, acao, "{\"dataEfetivacao\":\"2025-01-12\"}", 409);
+        assertThat(snapshot(id)).isEqualTo(antes);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"DESPESA,receber,PENDENTE", "RECEITA,pagar,PENDENTE",
+            "DESPESA,receber,EFETIVADO", "RECEITA,pagar,EFETIVADO"})
+    @DisplayName("@spec:AC-704 Tipo incompatível retorna 409 antes de qualquer alteração")
+    void rejeitaConfirmacaoDeTipoErrado(String tipo, String acao, String situacao) throws Exception {
+        UUID id = inserirPendente(tipo);
+        if (situacao.equals("EFETIVADO")) {
+            jdbc.update("update transacao_financeira set situacao='EFETIVADO', data_efetivacao='2025-01-11' where id=?", id);
+        }
+        var antes = snapshot(id);
+        confirmar(id, acao, "{\"dataEfetivacao\":\"2025-01-11\"}", 409);
+        assertThat(snapshot(id)).isEqualTo(antes);
+    }
+
+    @ParameterizedTest
+    @MethodSource("confirmacoesInvalidas")
+    @DisplayName("@spec:AC-703 API rejeita data inválida e campos de pagamento parcial sem alterar nenhum dado")
+    void rejeitaConfirmacaoInvalida(String tipo, String acao, String payload) throws Exception {
+        UUID id = inserirPendente(tipo);
+        var antes = snapshot(id);
+        confirmar(id, acao, payload, 400);
+        assertThat(snapshot(id)).isEqualTo(antes);
+    }
+
+    static Stream<org.junit.jupiter.params.provider.Arguments> confirmacoesInvalidas() {
+        return Stream.of("DESPESA", "RECEITA").flatMap(tipo -> Stream.of(
+                "{}", "{\"dataEfetivacao\":null}", "{\"dataEfetivacao\":\"inválida\"}",
+                "{\"dataEfetivacao\":\"2025-02-30\"}",
+                "{\"dataEfetivacao\":\"" + LocalDate.now(ZoneId.of("America/Bahia")).plusDays(2) + "\"}",
+                "{\"dataEfetivacao\":\"2025-01-11\",\"valor\":50.00}",
+                "{\"dataEfetivacao\":\"2025-01-11\",\"valorPago\":50.00}",
+                "{\"dataEfetivacao\":\"2025-01-11\",\"versao\":1}"
+        ).map(body -> org.junit.jupiter.params.provider.Arguments.of(tipo, tipo.equals("DESPESA") ? "pagar" : "receber", body)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"pagar", "receber"})
+    @DisplayName("@spec:AC-703 Confirmação de UUID inexistente é 404 e UUID inválido é 400")
+    void confirmaUuidInexistenteOuInvalido(String acao) throws Exception {
+        confirmar(UUID.randomUUID(), acao, "{\"dataEfetivacao\":\"2025-01-11\"}", 404);
+        mvc.perform(post(URL + "/inválido/" + acao).header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"dataEfetivacao\":\"2025-01-11\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"DESPESA,pagar", "RECEITA,receber"})
+    @DisplayName("@spec:AC-703 Confirmação exige JWT válido sem alteração não autorizada")
+    void protegeConfirmacao(String tipo, String acao) throws Exception {
+        UUID id = inserirPendente(tipo);
+        var antes = snapshot(id);
+        for (String credencial : new String[]{null, "inválido", token(Instant.now().minusSeconds(60))}) {
+            var request = post(URL + "/{id}/" + acao, id).contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"dataEfetivacao\":\"2025-01-11\"}");
+            if (credencial != null) {
+                request.header("Authorization", "Bearer " + credencial);
+            }
+            mvc.perform(request).andExpect(status().isUnauthorized());
+        }
+        assertThat(snapshot(id)).isEqualTo(antes);
+    }
+
+    protected UUID inserirPendente(String tipo) {
+        UUID centro = UUID.randomUUID();
+        jdbc.update("""
+                insert into animal (id, brinco_rgd, data_nascimento, sexo, categoria_atual, status, origem)
+                values (?, ?, '2020-01-01', 'FEMEA', 'VACA', 'ATIVO', 'COMPRA')
+                """, centro, "CONF-" + centro);
+        UUID id = UUID.randomUUID();
+        jdbc.update("""
+                insert into transacao_financeira
+                (id,tipo,data_transacao,valor,categoria,centro_custo_id,tipo_centro_custo,descricao,situacao,
+                 data_vencimento,origem_tipo,origem_id)
+                values (?,?, '2025-01-10',100.00,?,?,'ANIMAL','Confirmação integral','PENDENTE', '2025-01-15',?,?)
+                """, id, tipo, tipo.equals("DESPESA") ? "COMPRA_ANIMAL" : "VENDA_LEITE", centro,
+                tipo.equals("DESPESA") ? "COMPRA_ANIMAL" : "VENDA", centro);
+        return id;
+    }
+
+    protected Map<String, Object> snapshot(UUID id) {
+        return jdbc.queryForMap("select * from transacao_financeira where id=?", id);
+    }
+
+    protected Map<String, Object> semEfetivacao(Map<String, Object> original) {
+        var copia = new LinkedHashMap<>(original);
+        copia.remove("situacao");
+        copia.remove("data_efetivacao");
+        return copia;
+    }
+
+    private String confirmar(UUID id, String acao, String payload, int statusEsperado) throws Exception {
+        return mvc.perform(post(URL + "/{id}/" + acao, id).header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().is(statusEsperado)).andReturn().getResponse().getContentAsString();
     }
 
     @ParameterizedTest

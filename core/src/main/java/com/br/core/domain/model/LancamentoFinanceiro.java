@@ -155,6 +155,30 @@ public final class LancamentoFinanceiro {
         return new LancamentoFinanceiroBuilder();
     }
 
+    public LancamentoFinanceiro confirmarPagamento(LocalDate dataEfetivacao) {
+        return efetivar(TipoLancamentoFinanceiro.DESPESA, dataEfetivacao);
+    }
+
+    public LancamentoFinanceiro confirmarRecebimento(LocalDate dataEfetivacao) {
+        return efetivar(TipoLancamentoFinanceiro.RECEITA, dataEfetivacao);
+    }
+
+    private LancamentoFinanceiro efetivar(TipoLancamentoFinanceiro tipoEsperado, LocalDate data) {
+        if (tipo != tipoEsperado) {
+            throw new IllegalStateException("A ação de confirmação é incompatível com o tipo do lançamento.");
+        }
+        validarDatasESituacao(dataReferencia, SituacaoFinanceira.EFETIVADO, data,
+                Clock.system(ZoneId.of("America/Bahia")));
+        if (situacao == SituacaoFinanceira.EFETIVADO) {
+            if (!dataEfetivacao.equals(data)) {
+                throw new IllegalStateException("O lançamento já foi efetivado em outra data.");
+            }
+            return this;
+        }
+        return new LancamentoFinanceiro(id, tipo, descricao, valor, categoria, dataReferencia,
+                dataVencimento, SituacaoFinanceira.EFETIVADO, data, tipoDeCusto, referenciaId);
+    }
+
     public UUID getId() { return id; }
     public TipoLancamentoFinanceiro getTipo() { return tipo; }
     public String getDescricao() { return descricao; }

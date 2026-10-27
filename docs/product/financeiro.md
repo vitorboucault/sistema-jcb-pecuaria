@@ -2,7 +2,7 @@
 
 ## Situação atual e proposta
 
-O domínio e a persistência de receitas e despesas estão implementados em FIN-002.1–FIN-002.2. Compras operacionais com valor geram despesas PENDENTE; indicadores produtivos continuam consultando despesas por ocorrência. FIN-002.3 acrescenta cadastro e consulta por UUID via API autenticada, com validação de centros existentes. Confirmação posterior de pagamentos/recebimentos, recorrências e resumo de caixa permanecem nas etapas seguintes de FIN-002–FIN-006.
+O domínio e a persistência de receitas e despesas estão implementados em FIN-002.1–FIN-002.2. Compras operacionais com valor geram despesas PENDENTE; indicadores produtivos continuam consultando despesas por ocorrência. FIN-002.3 acrescenta cadastro e consulta por UUID via API autenticada, com validação de centros existentes. FIN-002.4 permite confirmar pagamentos e recebimentos integrais. Recorrências, resumo de caixa e demais entregas permanecem nas etapas seguintes de FIN-002–FIN-006.
 
 A [especificação](../../.spec/features/financeiro-essencial/spec.md) concentra critérios verificáveis, DER, contratos e estratégia de evolução. As [tarefas](../../.spec/features/financeiro-essencial/tasks.md) definem as entregas seguintes.
 
@@ -45,3 +45,9 @@ Vendas múltiplas e integração automática pertencem à sprint Vendas. Também
 POST `/api/v1/financeiro/lancamentos` cadastra receita/despesa e retorna 201 com Location, UUID gerado e dados normalizados. GET `/api/v1/financeiro/lancamentos/{id}` retorna 200 ou 404; payload/UUID inválido retorna 400. Ambos exigem JWT válido. O cliente informa os atributos básicos do domínio, sem definir UUID ou origem operacional. O cadastro aceita PENDENTE ou EFETIVADO com data efetiva válida; centros ANIMAL, LOTE e PASTO precisam existir e GERAL não recebe referência.
 
 O cadastro ainda não é idempotente: cada POST válido cria um lançamento. `chaveOperacao` e proteção contra reenvios são requisitos da FIN-002.5. A descrição de proteção contra duplicidade acima representa o contrato final, ainda planejado. Nesta etapa não há edição, exclusão, confirmação posterior, listagem, resumo ou recorrência.
+
+## Confirmação disponível na FIN-002.4
+
+POST `/api/v1/financeiro/lancamentos/{id}/pagar` para despesa e `/receber` para receita, com JWT e apenas `dataEfetivacao` obrigatória e não futura. Retorna 200 com situação EFETIVADO e a data real, mantendo integralmente os demais dados. Mesma data repetida retorna 200 sem nova alteração; outra data ou ação incompatível retorna 409. Payload/data/UUID inválido retorna 400; UUID inexistente, 404. Valores parciais e outros campos não pertencem ao payload e são rejeitados.
+
+Confirmações concorrentes usam bloqueio da linha dentro da transação. A proteção de repetição da confirmação não depende de chave de cadastro. O atributo `versao` do contrato final e o controle otimista permanecem reservados para FIN-002.5, assim como auditoria, correções/exclusões e idempotência de cadastro.
